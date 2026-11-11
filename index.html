@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Robo-Zumbi">
+<meta name="theme-color" content="#0f1a33">
+<title>Robo-Zumbi</title>
+<style>
+  :root{--bg:#0f1a33;--panel:#17244a;--ink:#f4f1e8;--muted:#a9b4d0;--lit:#ffd54a;--ok:#5be38a;--accent:#ff6b5a}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  .wrap{max-width:1100px;margin:0 auto;padding:8px 12px 12px}
+  header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  h1{font-size:24px;margin:0;margin-right:auto}
+  .hbtn{border:2px solid #33437a;background:var(--panel);color:var(--ink);font-size:17px;font-weight:800;padding:7px 12px;border-radius:12px;cursor:pointer}
+  .stars{font-size:20px;font-weight:900;color:var(--lit);padding:0 6px}
+  .lvls{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+  .lvls span{min-width:34px;height:34px;border-radius:10px;background:#22315f;color:var(--muted);font-weight:900;font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+  .lvls span small{font-size:9px;letter-spacing:-1px}
+  .lvls span.on{background:var(--lit);color:#17305e}.lvls span.done{background:var(--ok);color:#0b3a1e}.lvls span.lock{opacity:.4;cursor:default}
+  .stage{margin-top:6px;border-radius:18px;overflow:hidden}
+  svg{display:block;width:100%;height:auto;max-height:calc(100vh - 330px);max-height:calc(100dvh - 330px);min-height:240px;touch-action:manipulation}
+  .caption{margin-top:6px;background:var(--panel);border-radius:16px;padding:8px 12px;display:flex;align-items:center;gap:12px}
+  #say{flex:none;width:48px;height:48px;border-radius:50%;border:0;background:var(--lit);font-size:23px;cursor:pointer}
+  #text{font-size:clamp(19px,2.5vw,26px);line-height:1.25;font-weight:800}
+  .prog{margin-top:6px;display:flex;gap:6px;align-items:center;min-height:64px;background:#0b1530;border:2px solid #33437a;border-radius:14px;padding:6px 10px;overflow-x:auto}
+  .prog .empty{color:#5b6b9a;font-size:18px;font-weight:700}
+  .card{flex:none;width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;color:#fff;position:relative;border:3px solid transparent;animation:pop .2s ease-out}
+  @keyframes pop{from{transform:scale(.3)}to{transform:scale(1)}}
+  .card i{position:absolute;top:-1px;left:4px;font-size:11px;font-style:normal;opacity:.85}
+  .card.run{border-color:#fff;transform:scale(1.15);box-shadow:0 0 14px #fff}
+  .card.bad{background:#ff5252!important;border-color:#fff;animation:shake .35s}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .U{background:#3b82f6}.D{background:#a855f7}.L{background:#f59e0b}.R{background:#22c55e}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .controls button{border:0;border-radius:16px;padding:12px 14px;font-size:20px;font-weight:900;cursor:pointer;color:#fff;transition:transform .08s}
+  .controls button:active{transform:scale(.94)}
+  .controls button:disabled{opacity:.35}
+  .arrow{min-width:126px}.arrow b{font-size:26px}
+  .gray{background:#33437a}.go{background:var(--accent);min-width:150px}.yellow{background:var(--lit);color:#17305e!important}
+  .pulse{animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,213,74,.9)}50%{box-shadow:0 0 0 10px rgba(255,213,74,0)}}
+  .bob{animation:bob 1.6s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .wings{transform-box:fill-box;transform-origin:50% 100%;animation:flap .09s linear infinite alternate}
+  @keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(.55)}}
+  .led{animation:led 1.2s infinite}
+  @keyframes led{0%,90%,100%{opacity:1}95%{opacity:.1}}
+  .spin{transform-box:fill-box;transform-origin:50% 50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  [hidden]{display:none!important}
+  footer{margin-top:8px;color:var(--muted);font-size:12px;display:flex;gap:8px;align-items:center}
+  .mini{border:1px solid #33437a;background:transparent;color:var(--muted);border-radius:8px;font-size:12px;padding:3px 8px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🤖 Robo-Zumbi</h1>
+    <span class="stars" id="starsTxt">⭐ 0</span>
+    <button class="hbtn" id="bAlbum">📒 Álbum</button>
+    <button class="hbtn" id="bSound">🔈</button>
+  </header>
+  <div class="lvls" id="lvls"></div>
+
+  <div class="stage">
+    <svg id="svg" viewBox="0 0 1000 560" aria-label="Juego de Robo-Zumbi">
+      <g id="bg"></g>
+      <text id="title" x="500" y="50" text-anchor="middle" font-size="32" font-weight="900" fill="#17305e"></text>
+      <g id="scene"></g>
+      <g id="over"></g>
+      <g id="fx" pointer-events="none"></g>
+    </svg>
+  </div>
+
+  <div class="caption"><button id="say" aria-label="Escuchar">🔊</button><div id="text"></div></div>
+
+  <div id="levelUI" hidden>
+    <div class="prog" id="prog"></div>
+    <div class="controls">
+      <button class="arrow U" data-d="U"><b>↑</b> Arriba</button>
+      <button class="arrow D" data-d="D"><b>↓</b> Abajo</button>
+      <button class="arrow L" data-d="L"><b>←</b> Izquierda</button>
+      <button class="arrow R" data-d="R"><b>→</b> Derecha</button>
+      <button class="gray" id="undo">⌫</button>
+      <button class="gray" id="clear">🗑️</button>
+      <button class="go" id="run">▶ ¡Ejecutar!</button>
+      <button class="gray" id="hint">💡 Pista</button>
+    </div>
+  </div>
+  <footer>Robo-Zumbi · clase de robótica <button id="resetProg" class="mini">Borrar progreso</button></footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const G = $('#scene'), FX = $('#fx'), OV = $('#over');
+let run = 0, unlocked = false, soundOn = true;
+const alive = id => () => id === run;
+function tween(ms, fn, ok){ return new Promise(res => { const t0=performance.now();
+  (function f(n){ if(!ok()) return res(); const t=Math.min(1,(n-t0)/ms); fn(t); t<1?requestAnimationFrame(f):res(); })(t0); }); }
+const wait = (ms, ok) => tween(ms, ()=>{}, ok);
+const ease = t => t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+const store = { get(k,d){ try{ const v=localStorage.getItem('rz2_'+k); return v===null?d:JSON.parse(v); }catch(e){ return d; } },
+                set(k,v){ try{ localStorage.setItem('rz2_'+k, JSON.stringify(v)); }catch(e){} } };
+
+// ---------- sonidos ----------
+let ac=null;
+function audio(){ try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)(); ac.resume && ac.resume(); }catch(e){} return ac; }
+function note(f, d, type='sine', v=.1, w=0, slide=0){ if(!soundOn) return; const a=audio(); if(!a) return;
+  try{ const o=a.createOscillator(), g=a.createGain(), t=a.currentTime+w; o.type=type; o.frequency.setValueAtTime(f,t);
+    if(slide) o.frequency.linearRampToValueAtTime(slide,t+d); g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+d+.02); }catch(e){} }
+const sStep  = i => note(440+i*35,.1,'square',.04);
+const sBeep  = () => { note(880,.1,'square',.06); note(1175,.12,'square',.06,.13); };
+const sError = () => { note(300,.12,'sawtooth',.07,0,150); note(200,.3,'sawtooth',.07,.15,90); };
+const sEat   = () => { note(500,.08,'square',.06); note(700,.08,'square',.06,.09); note(1000,.15,'sine',.1,.18,1400); };
+const sWin   = () => [523,659,784,1047,1319].forEach((f,i)=>note(f,.28,'sine',.11,i*.11));
+const sStar  = i => note(900+i*250,.18,'sine',.12);
+const sAdd   = d => note({U:660,D:440,L:520,R:590}[d],.08,'triangle',.1);
+
+// ---------- voz (solo con el botón 🔊) ----------
+function speak(t){ try{ if(!window.speechSynthesis) return; speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g,'').replace(/[^\p{L}\p{N}\s.,;:¡!¿?'"()\-–]/gu,''));
+  const vs=speechSynthesis.getVoices(); const v=vs.find(v=>/es[-_](CO|MX|US|419)/i.test(v.lang))||vs.find(v=>/^es/i.test(v.lang));
+  if(v) u.voice=v; u.lang=v?v.lang:'es-ES'; u.rate=.95; u.pitch=1.1; speechSynthesis.speak(u); }catch(e){} }
+function say(t){ $('#text').innerHTML = t; }
+
+// ---------- dibujos ----------
+function robotSVG(){ return `<g class="bob">
+  <g class="wings"><ellipse cx="-38" cy="-66" rx="34" ry="58" transform="rotate(-28 -38 -66)" fill="rgba(225,245,255,.85)" stroke="#6fb3e0" stroke-width="3"/>
+  <ellipse cx="38" cy="-66" rx="34" ry="58" transform="rotate(28 38 -66)" fill="rgba(225,245,255,.85)" stroke="#6fb3e0" stroke-width="3"/></g>
+  <g stroke="#4a5568" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M-42,45 L-62,80 L-74,80"/><path d="M-14,58 L-20,94 L-32,96"/><path d="M14,58 L20,94 L32,96"/><path d="M42,45 L62,80 L74,80"/></g>
+  <ellipse cx="0" cy="10" rx="74" ry="60" fill="#aab7c9" stroke="#4a5568" stroke-width="4"/>
+  <line x1="0" y1="-46" x2="0" y2="-82" stroke="#4a5568" stroke-width="5"/><circle class="led" cx="0" cy="-88" r="9" fill="#ff5252"/>
+  <circle cx="-50" cy="38" r="4" fill="#4a5568"/><circle cx="50" cy="38" r="4" fill="#4a5568"/>
+  <rect x="-18" y="26" width="36" height="12" rx="4" fill="#0b1530"/><path d="M-12,32 H12" stroke="#4fd1ff" stroke-width="3"/>
+  <rect x="-58" y="-32" width="44" height="34" rx="10" fill="#0b1530"/><rect class="led" x="-50" y="-25" width="28" height="20" rx="6" fill="#4fd1ff"/>
+  <rect x="14" y="-32" width="44" height="34" rx="10" fill="#0b1530"/><rect class="led" x="22" y="-25" width="28" height="20" rx="6" fill="#4fd1ff"/></g>`; }
+function swatter(x,y){ return `<g transform="translate(${x} ${y}) rotate(-15)"><line x1="0" y1="20" x2="0" y2="44" stroke="#8d2a1f" stroke-width="8" stroke-linecap="round"/>
+  <rect x="-24" y="-38" width="48" height="58" rx="10" fill="#e74c3c" stroke="#fff" stroke-width="3"/>
+  <path d="M-16,-26 H16 M-16,-12 H16 M-16,2 H16 M-8,-34 V16 M8,-34 V16" stroke="#ffb3a8" stroke-width="2"/></g>`; }
+function meteor(x,y){ return `<g transform="translate(${x} ${y})"><path d="M-30,-30 L-52,-46 M-24,-36 L-40,-56" stroke="#ff9f43" stroke-width="6" stroke-linecap="round"/>
+  <circle r="32" fill="#8d8d9e" stroke="#4b4b5c" stroke-width="4"/><circle cx="-10" cy="-8" r="8" fill="#6d6d7e"/><circle cx="12" cy="10" r="6" fill="#6d6d7e"/><circle cx="10" cy="-14" r="4" fill="#6d6d7e"/></g>`; }
+function bubble(x,y,t,w){ w=w||t.length*14+40; x=Math.max(w/2+8,Math.min(1000-w/2-8,x));
+  return `<g><rect x="${x-w/2}" y="${y-32}" width="${w}" height="50" rx="18" fill="#fff" stroke="#17305e" stroke-width="3"/>
+  <text x="${x}" y="${y+2}" text-anchor="middle" font-size="24" font-weight="800" fill="#17305e">${t}</text></g>`; }
+function confetti(ok){ const cols=['#ff6b5a','#ffd54a','#5be38a','#4fd1ff','#b388ff','#ff9aa8']; let h=''; const P=[];
+  for(let i=0;i<70;i++){ P.push({x:Math.random()*1000,y:-20-Math.random()*200,v:180+Math.random()*260,r:Math.random()*360}); h+=`<rect width="14" height="8" fill="${cols[i%6]}"/>`; }
+  FX.innerHTML=h; const els=[...FX.children];
+  return tween(2600,t=>els.forEach((e,i)=>{const p=P[i]; e.setAttribute('transform',`translate(${p.x+Math.sin(t*6+i)*20} ${p.y+p.v*t*3}) rotate(${p.r+t*500})`);}),ok).then(()=>{ if(ok()) FX.innerHTML=''; }); }
+
+// ---------- mundos ----------
+const WORLDS = [
+ { name:'Jardín', bg:'#cdeeff', tiles:['#bfeaa3','#a7e08a'], border:'#5a9e3e', title:'#17305e', obs:'swatter',
+   deco:`<circle cx="935" cy="62" r="38" fill="#ffd54a"/><ellipse cx="90" cy="70" rx="60" ry="22" fill="#fff"/><ellipse cx="130" cy="60" rx="40" ry="20" fill="#fff"/>` },
+ { name:'Cocina', bg:'#ffe9c7', tiles:['#ffffff','#f3d9b1'], border:'#c58b4a', title:'#6b3d14', obs:'swatter',
+   deco:`<rect x="860" y="30" width="110" height="80" rx="8" fill="#bfe6ff" stroke="#c58b4a" stroke-width="6"/><line x1="915" y1="30" x2="915" y2="110" stroke="#c58b4a" stroke-width="5"/>
+         <text x="80" y="95" font-size="60" text-anchor="middle">🫖</text>` },
+ { name:'Espacio', bg:'#101544', tiles:['#2b2f6b','#363b80'], border:'#7f77dd', title:'#ffffff', obs:'meteor',
+   deco:Array.from({length:40},(_,i)=>`<circle cx="${(i*197)%1000}" cy="${(i*83)%560}" r="${i%3?1.5:2.5}" fill="#fff" opacity=".8"/>`).join('')+
+        `<circle cx="920" cy="80" r="40" fill="#ffb74d"/><ellipse cx="920" cy="80" rx="62" ry="12" fill="none" stroke="#ffe0b2" stroke-width="5"/>` }
+];
+// ---------- niveles (de fácil a difícil) ----------
+// U=arriba D=abajo L=izquierda R=derecha · tablero 6 x 4 · [columna, fila]
+const LEVELS = [
+ { start:[0,1], fruits:[[2,1]], obs:[], sol:'RR', text:'¡Tengo hambre! Llévame a la manzana.' },
+ { start:[1,0], fruits:[[1,3]], obs:[], sol:'DDD', text:'La fresa está abajo. ¿Cuántos pasos?' },
+ { start:[0,3], fruits:[[3,1]], obs:[], sol:'RRRUU', text:'Primero a la derecha, después arriba.' },
+ { start:[0,1], fruits:[[4,1]], obs:[[2,1]], sol:'RURRDR', text:'¡Cuidado con el matamoscas! Dale la vuelta.' },
+ { start:[0,3], fruits:[[2,3],[2,0]], obs:[[1,1],[3,2]], sol:'RRUUU', text:'¡Dos frutas! Cómete las dos.' },
+ { start:[2,1], fruits:[[0,1],[5,1]], obs:[[1,0],[1,2],[4,0],[4,2]], sol:'LLRRRRR', text:'Una fruta a cada lado. ¡Ve y vuelve!' },
+ { start:[0,0], fruits:[[5,3]], obs:[[1,1],[2,2],[3,0],[4,2]], sol:'DDDRRRRR', text:'La fruta está en la otra esquina.' },
+ { start:[0,3], fruits:[[5,0]], obs:[[0,2],[1,1],[2,0],[2,3],[3,2],[4,1]], sol:'RURURURR', text:'¡Una escalera! Derecha, arriba, derecha, arriba…' },
+ { start:[0,0], fruits:[[2,0],[2,3],[5,3]], obs:[[1,1],[1,2],[3,0],[3,1],[3,2]], sol:'RRDDDRRR', text:'¡Tres frutas! Recógelas todas.' },
+ { start:[0,0], fruits:[[5,3]], obs:[[2,0],[2,1],[4,2],[4,3]], sol:'DDRRRURRDD', text:'¡Un camino largo! Esquiva todo.' },
+ { start:[0,1], fruits:[[1,0],[3,0],[5,0]], obs:[[2,0],[4,0],[0,2],[2,2],[4,2]], sol:'RUDRRUDRRU', text:'Frutas en cuevitas: ¡entra, come y sal!' },
+ { start:[0,3], fruits:[[0,0],[5,0],[5,3]], obs:[[2,1],[3,2]], sol:'UUURRRRRDDD', text:'Tres frutas en las esquinas del espacio.' },
+ { start:[0,0], fruits:[[5,0]], obs:[[1,0],[1,1],[1,2],[3,1],[3,2],[3,3]], sol:'DDDRRUUURRR', text:'¡Un laberinto de meteoritos!' },
+ { start:[0,0], fruits:[[2,2]], obs:[[1,1],[2,1],[3,1],[4,1],[0,2],[3,2],[4,2]], sol:'RRRRRDDDLLLU', text:'La fruta está cerca… ¡pero hay que dar la vuelta!' },
+ { start:[0,3], fruits:[[5,3]], obs:[[1,1],[1,2],[1,3],[3,0],[3,1],[3,2],[4,1]], sol:'UUURRDDDRRR', text:'¡El súper laberinto final!' }
+];
+const worldOf = i => WORLDS[Math.floor(i/5)];
+const FRUITS = ['🍎','🍓','🍌','🍇','🍐','🍊','🍉','🍒','🍍','🥝','🍑','🍋'];
+const STICKERS = ['🐞','🦋','🐝','🐌','🐢','🐸','🦊','🐼','🐨','🦁','🐬','🦄','🐙','🚀','🏆'];
+const DIR = {U:[0,-1,'↑','arriba'], D:[0,1,'↓','abajo'], L:[-1,0,'←','izquierda'], R:[1,0,'→','derecha']};
+const CELL=100, BX=200, BY=110, COLS=6, ROWS=4, MAX=14;
+const cx = c => BX+c*CELL+50, cy = r => BY+r*CELL+50;
+
+let mode='start', lvl=0, prog=[], running=false, pos=[0,0], got=new Set(), tries=0, fails=0;
+let stars = store.get('stars', {});           // nivel -> 1..3
+let maxLvl = store.get('max', 0);
+const totalStars = () => Object.values(stars).reduce((a,b)=>a+b,0);
+function save(){ store.set('stars',stars); store.set('max',maxLvl); $('#starsTxt').textContent='⭐ '+totalStars(); }
+
+function setBG(w){ $('#bg').innerHTML = `<rect width="1000" height="560" fill="${w.bg}"/>${w.deco}`; $('#title').setAttribute('fill', w.title); }
+function lvlDots(){
+  $('#lvls').innerHTML = LEVELS.map((_,i)=>{ const lock=i>maxLvl, s=stars[i]||0;
+    return `<span data-i="${i}" class="${lock?'lock':(mode==='level'&&i===lvl?'on':(s?'done':''))}">${lock?'🔒':i+1}${s?`<small>${'★'.repeat(s)}</small>`:''}</span>`; }).join('');
+  $('#lvls').querySelectorAll('span').forEach(s=>s.onclick=()=>{ if(+s.dataset.i>maxLvl) return; unlocked=true; audio(); showLevel(+s.dataset.i); });
+}
+function setMode(m){ mode=m; run++; running=false; FX.innerHTML=''; OV.innerHTML=''; $('#levelUI').hidden = m!=='level'; lvlDots(); }
+
+// ---------- tablero ----------
+function boardSVG(L, w){
+  let h='';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++)
+    h+=`<rect x="${BX+c*CELL+3}" y="${BY+r*CELL+3}" width="${CELL-6}" height="${CELL-6}" rx="12" fill="${w.tiles[(r+c)%2]}"/>`;
+  h+=`<rect x="${BX}" y="${BY}" width="${COLS*CELL}" height="${ROWS*CELL}" rx="14" fill="none" stroke="${w.border}" stroke-width="5"/>`;
+  h+=`<rect x="${BX+L.start[0]*CELL+6}" y="${BY+L.start[1]*CELL+6}" width="${CELL-12}" height="${CELL-12}" rx="10" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 6"/>`;
+  h+=`<g id="trail"></g><g id="ghost"></g>`;
+  L.obs.forEach(([c,r])=> h+= w.obs==='meteor' ? meteor(cx(c),cy(r)) : swatter(cx(c),cy(r)-4));
+  L.fruits.forEach(([c,r],i)=> h+=`<g class="fruit" data-k="${c},${r}" transform="translate(${cx(c)} ${cy(r)})"><text y="20" text-anchor="middle" font-size="56">${FRUITS[(LEVELS.indexOf(L)+i)%FRUITS.length]}</text></g>`);
+  h+=`<g id="rb">${robotSVG()}</g><g id="dizzy"></g><g id="bub"></g>`;
+  h+=`<g transform="translate(900 300)"><circle r="56" fill="#fff" opacity=".85"/><text id="cnt" y="14" text-anchor="middle" font-size="38" font-weight="900" fill="#17305e"></text></g>`;
+  h+=`<g transform="translate(100 300)"><circle r="56" fill="#fff" opacity=".85"/><text y="-8" text-anchor="middle" font-size="16" font-weight="800" fill="#17305e">Intentos</text><text id="tries" y="28" text-anchor="middle" font-size="36" font-weight="900" fill="#17305e">0</text></g>`;
+  return h;
+}
+function placeRobot(c,r,dx=0,dy=0,rot=0,s=.5){ const el=$('#rb'); if(el) el.setAttribute('transform',`translate(${cx(c)+dx} ${cy(r)+dy-6}) scale(${s}) rotate(${rot})`); }
+function updCount(){ const L=LEVELS[lvl]; const el=$('#cnt'); if(el) el.textContent=`${got.size}/${L.fruits.length}`; const t=$('#tries'); if(t) t.textContent=tries; }
+function resetBoard(){
+  const L=LEVELS[lvl]; pos=[...L.start]; got=new Set();
+  G.querySelectorAll('.fruit').forEach(f=>{ f.style.opacity=1; f.setAttribute('transform',`translate(${cx(+f.dataset.k.split(',')[0])} ${cy(+f.dataset.k.split(',')[1])})`); });
+  const tr=$('#trail'); if(tr) tr.innerHTML=''; const b=$('#bub'); if(b) b.innerHTML=''; const d=$('#dizzy'); if(d) d.innerHTML='';
+  placeRobot(pos[0],pos[1]); updCount();
+}
+function renderProg(){
+  const el=$('#prog');
+  el.innerHTML = prog.length ? prog.map((d,i)=>`<div class="card ${d}"><i>${i+1}</i>${DIR[d][2]}</div>`).join('') : '<span class="empty">👇 Toca las flechas para darle órdenes a Robo-Zumbi</span>';
+  el.scrollLeft = el.scrollWidth;
+  document.querySelectorAll('.arrow').forEach(b=>b.disabled = running || prog.length>=MAX);
+  $('#undo').disabled = running || !prog.length; $('#clear').disabled = running || !prog.length;
+  $('#run').disabled = running || !prog.length; $('#hint').disabled = running;
+  $('#run').classList.toggle('pulse', !running && prog.length>0);
+  $('#hint').classList.toggle('pulse', !running && fails>=3);
+}
+function showLevel(i){
+  setMode('level'); lvl=Math.max(0,Math.min(LEVELS.length-1,i)); lvlDots();
+  const L=LEVELS[lvl], w=worldOf(lvl); prog=[]; tries=0; fails=0;
+  setBG(w); $('#title').textContent = `${w.name} · Nivel ${lvl+1}`;
+  G.innerHTML = boardSVG(L,w); resetBoard(); renderProg(); say(L.text);
+  $('#rb').addEventListener('pointerdown', async ()=>{ if(running) return; sBeep(); const ok=alive(run);
+    await tween(400,t=>placeRobot(pos[0],pos[1],0,-Math.sin(Math.PI*t)*25,Math.sin(t*25)*8),ok); });
+}
+
+// ---------- ejecutar ----------
+async function dizzy(ok){
+  const d=$('#dizzy'); if(!d) return;
+  d.innerHTML = `<g transform="translate(${cx(pos[0])} ${cy(pos[1])-48})"><g class="spin"><text x="-26" y="0" font-size="22">⭐</text><text x="10" y="-6" font-size="18">💫</text><text x="-6" y="14" font-size="16">⭐</text></g></g>`;
+  await tween(320,t=>placeRobot(pos[0],pos[1],Math.sin(t*30)*6,0,Math.sin(t*20)*14),ok);
+}
+async function execute(){
+  if (running || !prog.length) return;
+  running=true; run++; const ok=alive(run); tries++; resetBoard(); renderProg();
+  const L=LEVELS[lvl], cards=[...document.querySelectorAll('#prog .card')];
+  say('¡Bip bup! Ejecutando…'); await wait(350, ok);
+  for (let i=0;i<prog.length;i++){
+    if(!ok()) return;
+    cards.forEach(c=>c.classList.remove('run')); cards[i].classList.add('run'); cards[i].scrollIntoView({block:'nearest',inline:'nearest'});
+    const [dx,dy]=DIR[prog[i]], nc=pos[0]+dx, nr=pos[1]+dy;
+    const out = nc<0||nr<0||nc>=COLS||nr>=ROWS, hit = L.obs.some(o=>o[0]===nc&&o[1]===nr);
+    sStep(i);
+    if (out||hit){
+      await tween(200,t=>placeRobot(pos[0],pos[1],dx*45*t,dy*45*t),ok);
+      sError(); cards[i].classList.remove('run'); cards[i].classList.add('bad');
+      await tween(220,t=>placeRobot(pos[0],pos[1],dx*45*(1-t),dy*45*(1-t)),ok);
+      $('#bub').innerHTML = bubble(cx(pos[0]), Math.max(40,cy(pos[1])-90), out?'¡Ups! ¡Me salí!':'¡Ay! ¡Choqué!', 230);
+      await dizzy(ok); fails++;
+      say(`¡Choqué en la flecha ${i+1}! Cámbiala y prueba otra vez.` + (fails>=3?' 💡 Usa la pista.':''));
+      running=false; renderProg(); document.querySelectorAll('#prog .card')[i]?.classList.add('bad'); return;
+    }
+    $('#trail').insertAdjacentHTML('beforeend',`<circle cx="${cx(pos[0])}" cy="${cy(pos[1])}" r="8" fill="#fff" opacity=".7"/>`);
+    const p0=[...pos];
+    await tween(380,t=>{ const e=ease(t); placeRobot(p0[0]+dx*e,p0[1]+dy*e,0,-Math.sin(Math.PI*t)*18); },ok);
+    pos=[nc,nr];
+    const f=[...G.querySelectorAll('.fruit')].find(f=>f.dataset.k===`${nc},${nr}`);
+    if (f && !got.has(f.dataset.k)){ got.add(f.dataset.k); sEat(); updCount();
+      tween(300,t=>{ f.setAttribute('transform',`translate(${cx(nc)} ${cy(nr)}) scale(${1+.5*Math.sin(Math.PI*t)-t})`); },ok).then(()=>{ f.style.opacity=0; });
+      await tween(260,t=>placeRobot(nc,nr,0,0,0,.5+.12*Math.sin(Math.PI*t)),ok);
+      $('#bub').innerHTML = bubble(cx(nc), Math.max(40,cy(nr)-90), '¡Ñam! 😋', 150);
+    }
+    await wait(90, ok);
+  }
+  cards.forEach(c=>c.classList.remove('run'));
+  running=false; renderProg();
+  if (got.size===L.fruits.length) win(ok);
+  else { sBeep(); $('#bub').innerHTML = bubble(cx(pos[0]), Math.max(40,cy(pos[1])-90), '¿Y las frutas? 🤔', 230); fails++;
+    say('Se acabaron las órdenes y me faltan frutas. ¡Agrega más flechas!'); renderProg(); }
+}
+async function win(ok){
+  const n = tries<=1 ? 3 : tries===2 ? 2 : 1, first = !stars[lvl];
+  stars[lvl] = Math.max(stars[lvl]||0, n); maxLvl = Math.max(maxLvl, Math.min(LEVELS.length-1, lvl+1)); save(); lvlDots();
+  sWin(); confetti(ok);
+  await tween(900,t=>placeRobot(pos[0],pos[1],0,-Math.abs(Math.sin(t*Math.PI*3))*30,Math.sin(t*Math.PI*6)*15),ok);
+  if(!ok()) return;
+  say(n===3 ? '¡Perfecto! ¡A la primera! ¡Eres un gran programador!' : '¡Lo lograste! ¿Puedes hacerlo a la primera para ganar 3 estrellas?');
+  const sticker = STICKERS[lvl], last = lvl===LEVELS.length-1;
+  OV.innerHTML = `<rect width="1000" height="560" fill="#000" opacity=".35"/>
+    <rect x="230" y="70" width="540" height="420" rx="30" fill="#fff" stroke="#ffd54a" stroke-width="8"/>
+    <text x="500" y="135" text-anchor="middle" font-size="44" font-weight="900" fill="#17305e">¡Ganaste!</text>
+    <g id="st">${[0,1,2].map(i=>`<text class="s" x="${400+i*100}" y="225" text-anchor="middle" font-size="70" opacity="0">${i<n?'⭐':'☆'}</text>`).join('')}</g>
+    <text x="500" y="${first?310:300}" text-anchor="middle" font-size="${first?26:24}" font-weight="800" fill="#6b3d14">${first?'¡Nueva figurita para tu álbum!':'Intentos: '+tries}</text>
+    ${first?`<text id="stk" x="500" y="400" text-anchor="middle" font-size="80" opacity="0">${sticker}</text>`:''}
+    <g id="oAgain" style="cursor:pointer"><rect x="270" y="420" width="200" height="56" rx="28" fill="#33437a"/><text x="370" y="456" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">↺ Otra vez</text></g>
+    <g id="oNext" style="cursor:pointer"><rect x="500" y="420" width="240" height="56" rx="28" fill="#ff6b5a"/><text x="620" y="456" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">${last?'🏆 ¡Final!':'Siguiente ▶'}</text></g>`;
+  $('#oAgain').addEventListener('pointerdown',e=>{ e.preventDefault(); showLevel(lvl); });
+  $('#oNext').addEventListener('pointerdown',e=>{ e.preventDefault(); last ? showFinal() : showLevel(lvl+1); });
+  const ss=[...OV.querySelectorAll('.s')];
+  for (let i=0;i<3;i++){ await wait(250,ok); if(!ok()) return; ss[i].setAttribute('opacity',1); if(i<n) sStar(i); }
+  if (first){ await wait(200,ok); const s=$('#stk'); if(s) await tween(400,t=>{ s.setAttribute('opacity',t); s.setAttribute('font-size',40+40*t); },ok); }
+}
+async function hint(){
+  if (running) return; run++; const ok=alive(run); const L=LEVELS[lvl]; let [c,r]=L.start, h='';
+  for (const d of L.sol){ c+=DIR[d][0]; r+=DIR[d][1]; h+=`<circle cx="${cx(c)}" cy="${cy(r)}" r="15" fill="#ffd54a" stroke="#fff" stroke-width="3"/>`; }
+  $('#ghost').innerHTML=h; say('💡 Sigue los puntos amarillos.');
+  await tween(3500,t=>{ const g=$('#ghost'); if(g) g.setAttribute('opacity', t<.8?1:(1-t)*5); },ok);
+  const g=$('#ghost'); if(g){ g.innerHTML=''; g.setAttribute('opacity',1); }
+}
+
+// ---------- inicio, álbum y final ----------
+function showStart(){
+  setMode('start'); setBG(WORLDS[0]); $('#title').textContent='¡Hola! Soy Robo-Zumbi';
+  G.innerHTML = `<g id="big" transform="translate(290 320) scale(1.3)">${robotSVG()}</g>
+    <g id="play" style="cursor:pointer"><rect x="520" y="200" width="400" height="110" rx="55" fill="#ff6b5a" stroke="#fff" stroke-width="6"/>
+    <text x="720" y="273" text-anchor="middle" font-size="48" font-weight="900" fill="#fff">▶ ¡Jugar!</text></g>
+    <g id="alb" style="cursor:pointer"><rect x="570" y="340" width="300" height="70" rx="35" fill="#b388ff" stroke="#fff" stroke-width="5"/>
+    <text x="720" y="387" text-anchor="middle" font-size="30" font-weight="900" fill="#fff">📒 Mi álbum</text></g>`;
+  say('¡Hola! Dame órdenes con las flechas y llévame a las frutas. ¡Toca Jugar!');
+  $('#play').addEventListener('pointerdown', e=>{ e.preventDefault(); unlocked=true; audio(); showLevel(maxLvl); });
+  $('#alb').addEventListener('pointerdown', e=>{ e.preventDefault(); unlocked=true; audio(); showAlbum(); });
+  $('#big').addEventListener('pointerdown', ()=>{ audio(); sBeep(); });
+}
+function showAlbum(){
+  setMode('album'); setBG(WORLDS[1]); $('#title').textContent='📒 Mi álbum de figuritas';
+  let h='';
+  STICKERS.forEach((s,i)=>{ const c=i%5, r=Math.floor(i/5), x=160+c*170, y=95+r*140, have=!!stars[i];
+    h+=`<g class="slot" data-i="${i}" style="cursor:${have?'pointer':'default'}"><rect x="${x}" y="${y}" width="140" height="120" rx="18" fill="${have?'#fff':'#e8d3b5'}" stroke="${have?'#ffd54a':'#c58b4a'}" stroke-width="5"/>
+      <text x="${x+70}" y="${y+75}" text-anchor="middle" font-size="${have?62:48}" ${have?'':'fill="#b08a5e" font-weight="900"'}>${have?s:'?'}</text>
+      <text x="${x+70}" y="${y+108}" text-anchor="middle" font-size="15" font-weight="800" fill="#6b3d14">Nivel ${i+1} ${have?'★'.repeat(stars[i]):''}</text></g>`; });
+  h+=`<g id="back" style="cursor:pointer"><rect x="400" y="500" width="200" height="50" rx="25" fill="#ff6b5a"/><text x="500" y="533" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">▶ Jugar</text></g>`;
+  G.innerHTML=h;
+  const n=Object.keys(stars).length;
+  say(n ? `¡Tienes ${n} figurita${n>1?'s':''} de ${STICKERS.length}! Gana niveles para completar tu álbum.` : 'Tu álbum está vacío. ¡Gana niveles para conseguir figuritas!');
+  $('#back').addEventListener('pointerdown', e=>{ e.preventDefault(); showLevel(maxLvl); });
+  G.querySelectorAll('.slot').forEach(s=>s.addEventListener('pointerdown',()=>{ const i=+s.dataset.i; if(stars[i]) showLevel(i); }));
+}
+function showFinal(){
+  setMode('final'); setBG(WORLDS[2]); $('#title').textContent='¡Programador de robots!';
+  const t=totalStars();
+  G.innerHTML = `<g id="med" style="cursor:pointer"><path d="M440,80 L500,190 L560,80" fill="#4fd1ff" stroke="#fff" stroke-width="4"/>
+    <circle cx="500" cy="270" r="120" fill="#ffd54a" stroke="#c79100" stroke-width="10"/><circle cx="500" cy="270" r="92" fill="none" stroke="#fff3c4" stroke-width="5"/>
+    <text x="500" y="265" text-anchor="middle" font-size="70">🤖</text><text x="500" y="320" text-anchor="middle" font-size="22" font-weight="900" fill="#5a4500">PROGRAMADOR</text></g>
+    <g transform="translate(180 310) scale(.9)">${robotSVG()}</g>
+    <text x="830" y="280" text-anchor="middle" font-size="56" font-weight="900" fill="#ffd54a">⭐ ${t}</text>
+    <text x="830" y="320" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">de ${LEVELS.length*3} estrellas</text>
+    <g id="alb" style="cursor:pointer"><rect x="300" y="430" width="190" height="56" rx="28" fill="#b388ff"/><text x="395" y="466" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">📒 Álbum</text></g>
+    <g id="again" style="cursor:pointer"><rect x="510" y="430" width="230" height="56" rx="28" fill="#ff6b5a"/><text x="625" y="466" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">⭐ Mejorar estrellas</text></g>`;
+  say(t>=LEVELS.length*3 ? '¡INCREÍBLE! ¡Tienes todas las estrellas! Muéstrale a tu profe.' : '¡Ganaste todos los niveles! Muéstrale tus estrellas a tu profe. ¿Puedes conseguir 3 estrellas en todos?');
+  confetti(alive(run)); sWin();
+  $('#med').addEventListener('pointerdown',()=>{ sWin(); confetti(alive(run)); });
+  $('#alb').addEventListener('pointerdown',e=>{ e.preventDefault(); showAlbum(); });
+  $('#again').addEventListener('pointerdown',e=>{ e.preventDefault(); const i=LEVELS.findIndex((_,k)=>(stars[k]||0)<3); showLevel(i<0?0:i); });
+}
+
+// ---------- botones ----------
+document.querySelectorAll('.arrow').forEach(b=>b.addEventListener('click',()=>{ unlocked=true; audio();
+  if (running||prog.length>=MAX) return; OV.innerHTML=''; FX.innerHTML=''; const d=b.dataset.d; prog.push(d); sAdd(d);
+  resetBoard(); renderProg(); }));
+$('#undo').onclick = ()=>{ prog.pop(); resetBoard(); renderProg(); };
+$('#clear').onclick = ()=>{ prog=[]; resetBoard(); renderProg(); };
+$('#run').onclick = ()=>{ unlocked=true; audio(); execute(); };
+$('#hint').onclick = ()=>{ unlocked=true; fails=0; renderProg(); hint(); };
+$('#say').onclick = ()=>{ unlocked=true; speak($('#text').textContent); };
+$('#bAlbum').onclick = ()=>{ unlocked=true; showAlbum(); };
+$('#bSound').onclick = e=>{ soundOn=!soundOn; e.target.textContent = soundOn?'🔈':'🔇'; };
+let resetArmed=false;
+$('#resetProg').onclick = e=>{ if(!resetArmed){ resetArmed=true; e.target.textContent='¿Seguro? Toca otra vez'; setTimeout(()=>{resetArmed=false; e.target.textContent='Borrar progreso';},3000); return; }
+  stars={}; maxLvl=0; save(); resetArmed=false; e.target.textContent='Borrar progreso'; showStart(); };
+if (window.speechSynthesis) try{ speechSynthesis.getVoices(); }catch(e){}
+save(); showStart();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  try { navigator.serviceWorker.register('sw.js').catch(()=>{}); } catch(e) {}
+}
+</script>
+</body>
+</html>
