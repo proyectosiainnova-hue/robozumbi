@@ -1,6 +1,6 @@
 // Guarda la página en el iPad para que funcione sin internet.
 // Con internet siempre trae la versión más nueva; sin internet usa la guardada.
-const CACHE = 'robozumbi-v2';
+const CACHE = 'robozumbi-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png'];
 
 self.addEventListener('install', e => {

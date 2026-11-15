@@ -36,13 +36,17 @@
   .card.run{border-color:#fff;transform:scale(1.15);box-shadow:0 0 14px #fff}
   .card.bad{background:#ff5252!important;border-color:#fff;animation:shake .35s}
   @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .card b{position:absolute;bottom:-5px;right:-2px;font-size:17px;background:#0b1530;color:#ffd54a;border-radius:7px;padding:0 4px;line-height:18px}
+  .loopbtn{background:#e11d48;min-width:128px}
+  .plbl{flex:none;font-size:15px;font-weight:900;color:var(--lit);margin-right:4px;white-space:nowrap}
+  .lvls span.exp{background:#3b2a6b;color:#d8ccff}.lvls span.exp.done{background:#8b5cf6;color:#fff}
   .U{background:#3b82f6}.D{background:#a855f7}.L{background:#f59e0b}.R{background:#22c55e}
   .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-  .controls button{border:0;border-radius:16px;padding:12px 14px;font-size:20px;font-weight:900;cursor:pointer;color:#fff;transition:transform .08s}
+  .controls button{border:0;border-radius:16px;padding:11px 12px;font-size:18px;font-weight:900;cursor:pointer;color:#fff;transition:transform .08s}
   .controls button:active{transform:scale(.94)}
   .controls button:disabled{opacity:.35}
-  .arrow{min-width:126px}.arrow b{font-size:26px}
-  .gray{background:#33437a}.go{background:var(--accent);min-width:150px}.yellow{background:var(--lit);color:#17305e!important}
+  .arrow{min-width:104px}.arrow b{font-size:24px}
+  .gray{background:#33437a}.go{background:var(--accent);min-width:140px}.yellow{background:var(--lit);color:#17305e!important}
   .pulse{animation:pulse 1s infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,213,74,.9)}50%{box-shadow:0 0 0 10px rgba(255,213,74,0)}}
   .bob{animation:bob 1.6s ease-in-out infinite}
@@ -87,6 +91,7 @@
       <button class="arrow D" data-d="D"><b>↓</b> Abajo</button>
       <button class="arrow L" data-d="L"><b>←</b> Izquierda</button>
       <button class="arrow R" data-d="R"><b>→</b> Derecha</button>
+      <button class="loopbtn" id="loop" hidden>🔁 Repetir</button>
       <button class="gray" id="undo">⌫</button>
       <button class="gray" id="clear">🗑️</button>
       <button class="go" id="run">▶ ¡Ejecutar!</button>
@@ -141,11 +146,13 @@ function robotSVG(){ return `<g class="bob">
   <rect x="-18" y="26" width="36" height="12" rx="4" fill="#0b1530"/><path d="M-12,32 H12" stroke="#4fd1ff" stroke-width="3"/>
   <rect x="-58" y="-32" width="44" height="34" rx="10" fill="#0b1530"/><rect class="led" x="-50" y="-25" width="28" height="20" rx="6" fill="#4fd1ff"/>
   <rect x="14" y="-32" width="44" height="34" rx="10" fill="#0b1530"/><rect class="led" x="22" y="-25" width="28" height="20" rx="6" fill="#4fd1ff"/></g>`; }
-function swatter(x,y){ return `<g transform="translate(${x} ${y}) rotate(-15)"><line x1="0" y1="20" x2="0" y2="44" stroke="#8d2a1f" stroke-width="8" stroke-linecap="round"/>
+function swatter(x,y,k=1){ return `<g transform="translate(${x} ${y}) scale(${k}) rotate(-15)"><line x1="0" y1="20" x2="0" y2="44" stroke="#8d2a1f" stroke-width="8" stroke-linecap="round"/>
   <rect x="-24" y="-38" width="48" height="58" rx="10" fill="#e74c3c" stroke="#fff" stroke-width="3"/>
   <path d="M-16,-26 H16 M-16,-12 H16 M-16,2 H16 M-8,-34 V16 M8,-34 V16" stroke="#ffb3a8" stroke-width="2"/></g>`; }
-function meteor(x,y){ return `<g transform="translate(${x} ${y})"><path d="M-30,-30 L-52,-46 M-24,-36 L-40,-56" stroke="#ff9f43" stroke-width="6" stroke-linecap="round"/>
+function meteor(x,y,k=1){ return `<g transform="translate(${x} ${y}) scale(${k})"><path d="M-30,-30 L-52,-46 M-24,-36 L-40,-56" stroke="#ff9f43" stroke-width="6" stroke-linecap="round"/>
   <circle r="32" fill="#8d8d9e" stroke="#4b4b5c" stroke-width="4"/><circle cx="-10" cy="-8" r="8" fill="#6d6d7e"/><circle cx="12" cy="10" r="6" fill="#6d6d7e"/><circle cx="10" cy="-14" r="4" fill="#6d6d7e"/></g>`; }
+function crate(x,y,k=1){ return `<g transform="translate(${x} ${y}) scale(${k})"><rect x="-34" y="-34" width="68" height="68" rx="6" fill="#c98b4a" stroke="#7a4b1e" stroke-width="4"/>
+  <path d="M-34,-34 L34,34 M34,-34 L-34,34" stroke="#7a4b1e" stroke-width="5"/><rect x="-34" y="-34" width="68" height="68" rx="6" fill="none" stroke="#7a4b1e" stroke-width="4"/></g>`; }
 function bubble(x,y,t,w){ w=w||t.length*14+40; x=Math.max(w/2+8,Math.min(1000-w/2-8,x));
   return `<g><rect x="${x-w/2}" y="${y-32}" width="${w}" height="50" rx="18" fill="#fff" stroke="#17305e" stroke-width="3"/>
   <text x="${x}" y="${y+2}" text-anchor="middle" font-size="24" font-weight="800" fill="#17305e">${t}</text></g>`; }
@@ -163,7 +170,10 @@ const WORLDS = [
          <text x="80" y="95" font-size="60" text-anchor="middle">🫖</text>` },
  { name:'Espacio', bg:'#101544', tiles:['#2b2f6b','#363b80'], border:'#7f77dd', title:'#ffffff', obs:'meteor',
    deco:Array.from({length:40},(_,i)=>`<circle cx="${(i*197)%1000}" cy="${(i*83)%560}" r="${i%3?1.5:2.5}" fill="#fff" opacity=".8"/>`).join('')+
-        `<circle cx="920" cy="80" r="40" fill="#ffb74d"/><ellipse cx="920" cy="80" rx="62" ry="12" fill="none" stroke="#ffe0b2" stroke-width="5"/>` }
+        `<circle cx="920" cy="80" r="40" fill="#ffb74d"/><ellipse cx="920" cy="80" rx="62" ry="12" fill="none" stroke="#ffe0b2" stroke-width="5"/>` },
+ { name:'Fábrica', bg:'#c9d3e3', tiles:['#eef1f6','#d9dfe9'], border:'#4b5b78', title:'#1d2a44', obs:'crate',
+   deco:`<g transform="translate(70 70)"><circle r="30" fill="none" stroke="#7d8aa5" stroke-width="12" stroke-dasharray="10 7"/><circle r="10" fill="#7d8aa5"/></g>
+         <g transform="translate(935 70)"><circle r="24" fill="none" stroke="#7d8aa5" stroke-width="10" stroke-dasharray="8 6"/><circle r="8" fill="#7d8aa5"/></g>` }
 ];
 // ---------- niveles (de fácil a difícil) ----------
 // U=arriba D=abajo L=izquierda R=derecha · tablero 6 x 4 · [columna, fila]
@@ -182,13 +192,40 @@ const LEVELS = [
  { start:[0,3], fruits:[[0,0],[5,0],[5,3]], obs:[[2,1],[3,2]], sol:'UUURRRRRDDD', text:'Tres frutas en las esquinas del espacio.' },
  { start:[0,0], fruits:[[5,0]], obs:[[1,0],[1,1],[1,2],[3,1],[3,2],[3,3]], sol:'DDDRRUUURRR', text:'¡Un laberinto de meteoritos!' },
  { start:[0,0], fruits:[[2,2]], obs:[[1,1],[2,1],[3,1],[4,1],[0,2],[3,2],[4,2]], sol:'RRRRRDDDLLLU', text:'La fruta está cerca… ¡pero hay que dar la vuelta!' },
- { start:[0,3], fruits:[[5,3]], obs:[[1,1],[1,2],[1,3],[3,0],[3,1],[3,2],[4,1]], sol:'UUURRDDDRRR', text:'¡El súper laberinto final!' }
+ { start:[0,3], fruits:[[5,3]], obs:[[1,1],[1,2],[1,3],[3,0],[3,1],[3,2],[4,1]], sol:'UUURRDDDRRR', text:'¡El súper laberinto final!' },
+ // ===== RETOS EXPERTOS (3º a 5º): tablero 8 x 5, pocas tarjetas y 🔁 Repetir =====
+ { cols:8, rows:5, loops:true, limit:1, start:[0,2], fruits:[[7,2]], obs:[], sol:'R7',
+   text:'NUEVO: 🔁 Repetir. ¡Solo puedes usar 1 tarjeta! Toca → y luego 🔁 hasta que diga ×7.' },
+ { cols:8, rows:5, loops:true, limit:2, start:[0,4], fruits:[[6,0]], obs:[[2,2],[4,3]], sol:'R6U4',
+   text:'Máximo 2 tarjetas. ¿Cuántas veces a la derecha y cuántas arriba?' },
+ { cols:8, rows:5, loops:true, limit:2, start:[0,0], fruits:[[7,4]], obs:[[2,1],[3,2],[5,1],[6,3],[4,3]], sol:'D4R7',
+   text:'Máximo 2 tarjetas. Busca el borde libre de cajas.' },
+ { cols:8, rows:5, loops:true, limit:3, start:[0,0], fruits:[[0,4],[7,4],[7,0]], obs:[[2,2],[3,2],[4,2],[5,2]], sol:'D4R7U4',
+   text:'Tres frutas, máximo 3 tarjetas. ¡Una tarjeta por cada lado!' },
+ { cols:8, rows:5, loops:true, limit:4, start:[0,4], fruits:[[7,0]], obs:[[1,4],[2,3],[3,4],[1,1],[2,0],[5,1],[6,2],[7,3]], sol:'U2R4U2R3',
+   text:'Máximo 4 tarjetas. Sube por la escalera de la fábrica.' },
+ { cols:8, rows:5, loops:true, limit:5, start:[0,2], fruits:[[7,2]], obs:[[3,2],[2,3],[5,3]], sol:'R2U1R2D1R3',
+   text:'Una caja en el camino. Salta por encima con máximo 5 tarjetas.' },
+ { cols:8, rows:5, loops:true, limit:5, start:[0,0], fruits:[[7,4]], obs:[[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3]], sol:'R7D2L7D2R7',
+   text:'¡La serpiente! Ida y vuelta por los pasillos. Máximo 5 tarjetas.' },
+ { cols:8, rows:5, loops:true, limit:4, start:[0,2], fruits:[[0,0],[7,0],[7,4],[0,4]], obs:[[2,2],[3,2],[4,2],[5,2]], sol:'U2R7D4L7',
+   text:'Cuatro frutas en las esquinas. ¡Solo 4 tarjetas!' },
+ { cols:8, rows:5, loops:true, limit:5, start:[0,0], fruits:[[3,2]], obs:[[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[4,2],[5,2],[6,2],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3]], sol:'R7D4L7U2R3',
+   text:'¡El caracol! Da toda la vuelta para llegar al centro. Máximo 5 tarjetas.' },
+ { cols:8, rows:5, loops:true, limit:5, start:[0,4], fruits:[[7,0]], obs:[[0,3],[1,3],[2,3],[4,1],[4,2],[4,3],[4,4],[2,1],[3,1],[0,1]], sol:'R3U2L2U2R6',
+   text:'¡EL GRAN RETO FINAL! El laberinto de la fábrica. Máximo 5 tarjetas.' }
 ];
-const worldOf = i => WORLDS[Math.floor(i/5)];
+const BASIC = 15;
+const worldOf = i => i>=BASIC ? WORLDS[3] : WORLDS[Math.floor(i/5)];
 const FRUITS = ['🍎','🍓','🍌','🍇','🍐','🍊','🍉','🍒','🍍','🥝','🍑','🍋'];
-const STICKERS = ['🐞','🦋','🐝','🐌','🐢','🐸','🦊','🐼','🐨','🦁','🐬','🦄','🐙','🚀','🏆'];
+const STICKERS = ['🐞','🦋','🐝','🐌','🐢','🐸','🦊','🐼','🐨','🦁','🐬','🦄','🐙','🚀','🏆','🦖','🐳','🦉','🐧','🦀','🐲','🛸','🌋','🤖','👑'];
 const DIR = {U:[0,-1,'↑','arriba'], D:[0,1,'↓','abajo'], L:[-1,0,'←','izquierda'], R:[1,0,'→','derecha']};
-const CELL=100, BX=200, BY=110, COLS=6, ROWS=4, MAX=14;
+let CELL=100, BX=200, BY=110, COLS=6, ROWS=4, RS=.5; const MAX=14;
+function setGeom(L){ COLS=L.cols||6; ROWS=L.rows||4; CELL=Math.min(100,Math.floor(640/COLS),Math.floor(420/ROWS));
+  BX=(1000-COLS*CELL)/2; BY=95+(430-ROWS*CELL)/2; RS=.5*CELL/100; }
+const parseSol = s => [...s.matchAll(/([UDLR])(\d*)/g)].map(m=>({d:m[1], n:+(m[2]||1)}));
+const limitOf = L => L.limit || MAX;
+const isOpen = i => i<BASIC ? i<=maxLvl : (i===BASIC || !!stars[i-1]);
 const cx = c => BX+c*CELL+50, cy = r => BY+r*CELL+50;
 
 let mode='start', lvl=0, prog=[], running=false, pos=[0,0], got=new Set(), tries=0, fails=0;
@@ -199,9 +236,9 @@ function save(){ store.set('stars',stars); store.set('max',maxLvl); $('#starsTxt
 
 function setBG(w){ $('#bg').innerHTML = `<rect width="1000" height="560" fill="${w.bg}"/>${w.deco}`; $('#title').setAttribute('fill', w.title); }
 function lvlDots(){
-  $('#lvls').innerHTML = LEVELS.map((_,i)=>{ const lock=i>maxLvl, s=stars[i]||0;
-    return `<span data-i="${i}" class="${lock?'lock':(mode==='level'&&i===lvl?'on':(s?'done':''))}">${lock?'🔒':i+1}${s?`<small>${'★'.repeat(s)}</small>`:''}</span>`; }).join('');
-  $('#lvls').querySelectorAll('span').forEach(s=>s.onclick=()=>{ if(+s.dataset.i>maxLvl) return; unlocked=true; audio(); showLevel(+s.dataset.i); });
+  $('#lvls').innerHTML = LEVELS.map((_,i)=>{ const lock=!isOpen(i), s=stars[i]||0, ex=i>=BASIC?' exp':'';
+    return `<span data-i="${i}" class="${lock?'lock'+ex:(mode==='level'&&i===lvl?'on':(s?'done'+ex:ex.trim()))}">${lock?'🔒':i+1}${s?`<small>${'★'.repeat(s)}</small>`:''}</span>`; }).join('');
+  $('#lvls').querySelectorAll('span').forEach(s=>s.onclick=()=>{ if(!isOpen(+s.dataset.i)) return; unlocked=true; audio(); showLevel(+s.dataset.i); });
 }
 function setMode(m){ mode=m; run++; running=false; FX.innerHTML=''; OV.innerHTML=''; $('#levelUI').hidden = m!=='level'; lvlDots(); }
 
@@ -213,14 +250,14 @@ function boardSVG(L, w){
   h+=`<rect x="${BX}" y="${BY}" width="${COLS*CELL}" height="${ROWS*CELL}" rx="14" fill="none" stroke="${w.border}" stroke-width="5"/>`;
   h+=`<rect x="${BX+L.start[0]*CELL+6}" y="${BY+L.start[1]*CELL+6}" width="${CELL-12}" height="${CELL-12}" rx="10" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 6"/>`;
   h+=`<g id="trail"></g><g id="ghost"></g>`;
-  L.obs.forEach(([c,r])=> h+= w.obs==='meteor' ? meteor(cx(c),cy(r)) : swatter(cx(c),cy(r)-4));
-  L.fruits.forEach(([c,r],i)=> h+=`<g class="fruit" data-k="${c},${r}" transform="translate(${cx(c)} ${cy(r)})"><text y="20" text-anchor="middle" font-size="56">${FRUITS[(LEVELS.indexOf(L)+i)%FRUITS.length]}</text></g>`);
+  const k=CELL/100; L.obs.forEach(([c,r])=> h+= w.obs==='meteor' ? meteor(cx(c),cy(r),k) : w.obs==='crate' ? crate(cx(c),cy(r),k) : swatter(cx(c),cy(r)-4*k,k));
+  L.fruits.forEach(([c,r],i)=> h+=`<g class="fruit" data-k="${c},${r}" transform="translate(${cx(c)} ${cy(r)})"><text y="${20*CELL/100}" text-anchor="middle" font-size="${56*CELL/100}">${FRUITS[(LEVELS.indexOf(L)+i)%FRUITS.length]}</text></g>`);
   h+=`<g id="rb">${robotSVG()}</g><g id="dizzy"></g><g id="bub"></g>`;
   h+=`<g transform="translate(900 300)"><circle r="56" fill="#fff" opacity=".85"/><text id="cnt" y="14" text-anchor="middle" font-size="38" font-weight="900" fill="#17305e"></text></g>`;
   h+=`<g transform="translate(100 300)"><circle r="56" fill="#fff" opacity=".85"/><text y="-8" text-anchor="middle" font-size="16" font-weight="800" fill="#17305e">Intentos</text><text id="tries" y="28" text-anchor="middle" font-size="36" font-weight="900" fill="#17305e">0</text></g>`;
   return h;
 }
-function placeRobot(c,r,dx=0,dy=0,rot=0,s=.5){ const el=$('#rb'); if(el) el.setAttribute('transform',`translate(${cx(c)+dx} ${cy(r)+dy-6}) scale(${s}) rotate(${rot})`); }
+function placeRobot(c,r,dx=0,dy=0,rot=0,s=RS){ const el=$('#rb'); if(el) el.setAttribute('transform',`translate(${cx(c)+dx} ${cy(r)+dy-6}) scale(${s}) rotate(${rot})`); }
 function updCount(){ const L=LEVELS[lvl]; const el=$('#cnt'); if(el) el.textContent=`${got.size}/${L.fruits.length}`; const t=$('#tries'); if(t) t.textContent=tries; }
 function resetBoard(){
   const L=LEVELS[lvl]; pos=[...L.start]; got=new Set();
@@ -230,9 +267,11 @@ function resetBoard(){
 }
 function renderProg(){
   const el=$('#prog');
-  el.innerHTML = prog.length ? prog.map((d,i)=>`<div class="card ${d}"><i>${i+1}</i>${DIR[d][2]}</div>`).join('') : '<span class="empty">👇 Toca las flechas para darle órdenes a Robo-Zumbi</span>';
+  const L=LEVELS[lvl], lim=limitOf(L);
+  el.innerHTML = (L.limit?`<span class="plbl">🃏 ${prog.length}/${lim}</span>`:'') + (prog.length ? prog.map((c,i)=>`<div class="card ${c.d}"><i>${i+1}</i>${DIR[c.d][2]}${c.n>1?`<b>×${c.n}</b>`:''}</div>`).join('') : `<span class="empty">👇 ${L.loops?'Flecha + 🔁 Repetir':'Toca las flechas para darle órdenes a Robo-Zumbi'}</span>`);
   el.scrollLeft = el.scrollWidth;
-  document.querySelectorAll('.arrow').forEach(b=>b.disabled = running || prog.length>=MAX);
+  document.querySelectorAll('.arrow').forEach(b=>b.disabled = running || prog.length>=lim);
+  $('#loop').hidden = !L.loops; $('#loop').disabled = running || !prog.length;
   $('#undo').disabled = running || !prog.length; $('#clear').disabled = running || !prog.length;
   $('#run').disabled = running || !prog.length; $('#hint').disabled = running;
   $('#run').classList.toggle('pulse', !running && prog.length>0);
@@ -241,7 +280,7 @@ function renderProg(){
 function showLevel(i){
   setMode('level'); lvl=Math.max(0,Math.min(LEVELS.length-1,i)); lvlDots();
   const L=LEVELS[lvl], w=worldOf(lvl); prog=[]; tries=0; fails=0;
-  setBG(w); $('#title').textContent = `${w.name} · Nivel ${lvl+1}`;
+  setGeom(L); setBG(w); $('#title').textContent = `${w.name} · Nivel ${lvl+1}`;
   G.innerHTML = boardSVG(L,w); resetBoard(); renderProg(); say(L.text);
   $('#rb').addEventListener('pointerdown', async ()=>{ if(running) return; sBeep(); const ok=alive(run);
     await tween(400,t=>placeRobot(pos[0],pos[1],0,-Math.sin(Math.PI*t)*25,Math.sin(t*25)*8),ok); });
@@ -256,34 +295,38 @@ async function dizzy(ok){
 async function execute(){
   if (running || !prog.length) return;
   running=true; run++; const ok=alive(run); tries++; resetBoard(); renderProg();
-  const L=LEVELS[lvl], cards=[...document.querySelectorAll('#prog .card')];
+  const L=LEVELS[lvl], cards=[...document.querySelectorAll('#prog .card')], T = L.loops ? 260 : 380;
   say('¡Bip bup! Ejecutando…'); await wait(350, ok);
-  for (let i=0;i<prog.length;i++){
+  let step=0; const P = prog.map(c=>({...c}));
+  for (let i=0;i<P.length;i++){
+   for (let k=0;k<P[i].n;k++){
     if(!ok()) return;
     cards.forEach(c=>c.classList.remove('run')); cards[i].classList.add('run'); cards[i].scrollIntoView({block:'nearest',inline:'nearest'});
-    const [dx,dy]=DIR[prog[i]], nc=pos[0]+dx, nr=pos[1]+dy;
+    const [dx,dy]=DIR[P[i].d], nc=pos[0]+dx, nr=pos[1]+dy;
     const out = nc<0||nr<0||nc>=COLS||nr>=ROWS, hit = L.obs.some(o=>o[0]===nc&&o[1]===nr);
-    sStep(i);
+    sStep(step++ % 12);
     if (out||hit){
-      await tween(200,t=>placeRobot(pos[0],pos[1],dx*45*t,dy*45*t),ok);
+      const b=CELL*.45;
+      await tween(200,t=>placeRobot(pos[0],pos[1],dx*b*t,dy*b*t),ok);
       sError(); cards[i].classList.remove('run'); cards[i].classList.add('bad');
-      await tween(220,t=>placeRobot(pos[0],pos[1],dx*45*(1-t),dy*45*(1-t)),ok);
+      await tween(220,t=>placeRobot(pos[0],pos[1],dx*b*(1-t),dy*b*(1-t)),ok);
       $('#bub').innerHTML = bubble(cx(pos[0]), Math.max(40,cy(pos[1])-90), out?'¡Ups! ¡Me salí!':'¡Ay! ¡Choqué!', 230);
       await dizzy(ok); fails++;
-      say(`¡Choqué en la flecha ${i+1}! Cámbiala y prueba otra vez.` + (fails>=3?' 💡 Usa la pista.':''));
+      say(`¡Choqué en la tarjeta ${i+1}${P[i].n>1?` (en la repetición ${k+1})`:''}! Cámbiala y prueba otra vez.` + (fails>=3?' 💡 Usa la pista.':''));
       running=false; renderProg(); document.querySelectorAll('#prog .card')[i]?.classList.add('bad'); return;
     }
-    $('#trail').insertAdjacentHTML('beforeend',`<circle cx="${cx(pos[0])}" cy="${cy(pos[1])}" r="8" fill="#fff" opacity=".7"/>`);
+    $('#trail').insertAdjacentHTML('beforeend',`<circle cx="${cx(pos[0])}" cy="${cy(pos[1])}" r="${8*CELL/100}" fill="#fff" opacity=".7"/>`);
     const p0=[...pos];
-    await tween(380,t=>{ const e=ease(t); placeRobot(p0[0]+dx*e,p0[1]+dy*e,0,-Math.sin(Math.PI*t)*18); },ok);
+    await tween(T,t=>{ const e=ease(t); placeRobot(p0[0]+dx*e,p0[1]+dy*e,0,-Math.sin(Math.PI*t)*18*CELL/100); },ok);
     pos=[nc,nr];
     const f=[...G.querySelectorAll('.fruit')].find(f=>f.dataset.k===`${nc},${nr}`);
     if (f && !got.has(f.dataset.k)){ got.add(f.dataset.k); sEat(); updCount();
       tween(300,t=>{ f.setAttribute('transform',`translate(${cx(nc)} ${cy(nr)}) scale(${1+.5*Math.sin(Math.PI*t)-t})`); },ok).then(()=>{ f.style.opacity=0; });
-      await tween(260,t=>placeRobot(nc,nr,0,0,0,.5+.12*Math.sin(Math.PI*t)),ok);
+      await tween(260,t=>placeRobot(nc,nr,0,0,0,RS*(1+.24*Math.sin(Math.PI*t))),ok);
       $('#bub').innerHTML = bubble(cx(nc), Math.max(40,cy(nr)-90), '¡Ñam! 😋', 150);
     }
-    await wait(90, ok);
+    await wait(L.loops?40:90, ok);
+   }
   }
   cards.forEach(c=>c.classList.remove('run'));
   running=false; renderProg();
@@ -293,12 +336,12 @@ async function execute(){
 }
 async function win(ok){
   const n = tries<=1 ? 3 : tries===2 ? 2 : 1, first = !stars[lvl];
-  stars[lvl] = Math.max(stars[lvl]||0, n); maxLvl = Math.max(maxLvl, Math.min(LEVELS.length-1, lvl+1)); save(); lvlDots();
+  stars[lvl] = Math.max(stars[lvl]||0, n); if (lvl<BASIC) maxLvl = Math.max(maxLvl, Math.min(BASIC-1, lvl+1)); save(); lvlDots();
   sWin(); confetti(ok);
   await tween(900,t=>placeRobot(pos[0],pos[1],0,-Math.abs(Math.sin(t*Math.PI*3))*30,Math.sin(t*Math.PI*6)*15),ok);
   if(!ok()) return;
   say(n===3 ? '¡Perfecto! ¡A la primera! ¡Eres un gran programador!' : '¡Lo lograste! ¿Puedes hacerlo a la primera para ganar 3 estrellas?');
-  const sticker = STICKERS[lvl], last = lvl===LEVELS.length-1;
+  const sticker = STICKERS[lvl], last = lvl===BASIC-1 || lvl===LEVELS.length-1;
   OV.innerHTML = `<rect width="1000" height="560" fill="#000" opacity=".35"/>
     <rect x="230" y="70" width="540" height="420" rx="30" fill="#fff" stroke="#ffd54a" stroke-width="8"/>
     <text x="500" y="135" text-anchor="middle" font-size="44" font-weight="900" fill="#17305e">¡Ganaste!</text>
@@ -308,14 +351,15 @@ async function win(ok){
     <g id="oAgain" style="cursor:pointer"><rect x="270" y="420" width="200" height="56" rx="28" fill="#33437a"/><text x="370" y="456" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">↺ Otra vez</text></g>
     <g id="oNext" style="cursor:pointer"><rect x="500" y="420" width="240" height="56" rx="28" fill="#ff6b5a"/><text x="620" y="456" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">${last?'🏆 ¡Final!':'Siguiente ▶'}</text></g>`;
   $('#oAgain').addEventListener('pointerdown',e=>{ e.preventDefault(); showLevel(lvl); });
-  $('#oNext').addEventListener('pointerdown',e=>{ e.preventDefault(); last ? showFinal() : showLevel(lvl+1); });
+  $('#oNext').addEventListener('pointerdown',e=>{ e.preventDefault(); last ? showFinal(lvl>=BASIC) : showLevel(lvl+1); });
   const ss=[...OV.querySelectorAll('.s')];
   for (let i=0;i<3;i++){ await wait(250,ok); if(!ok()) return; ss[i].setAttribute('opacity',1); if(i<n) sStar(i); }
   if (first){ await wait(200,ok); const s=$('#stk'); if(s) await tween(400,t=>{ s.setAttribute('opacity',t); s.setAttribute('font-size',40+40*t); },ok); }
 }
 async function hint(){
   if (running) return; run++; const ok=alive(run); const L=LEVELS[lvl]; let [c,r]=L.start, h='';
-  for (const d of L.sol){ c+=DIR[d][0]; r+=DIR[d][1]; h+=`<circle cx="${cx(c)}" cy="${cy(r)}" r="15" fill="#ffd54a" stroke="#fff" stroke-width="3"/>`; }
+  for (const t of parseSol(L.sol)) for (let k=0;k<t.n;k++){ c+=DIR[t.d][0]; r+=DIR[t.d][1]; h+=`<circle cx="${cx(c)}" cy="${cy(r)}" r="${15*CELL/100}" fill="#ffd54a" stroke="#fff" stroke-width="3"/>`; }
+  if (L.loops) h+=`<text x="500" y="92" text-anchor="middle" font-size="22" font-weight="900" fill="#e11d48">Pista: ${parseSol(L.sol).map(t=>DIR[t.d][2]+(t.n>1?'×'+t.n:'')).join('  ')}</text>`;
   $('#ghost').innerHTML=h; say('💡 Sigue los puntos amarillos.');
   await tween(3500,t=>{ const g=$('#ghost'); if(g) g.setAttribute('opacity', t<.8?1:(1-t)*5); },ok);
   const g=$('#ghost'); if(g){ g.innerHTML=''; g.setAttribute('opacity',1); }
@@ -328,48 +372,55 @@ function showStart(){
     <g id="play" style="cursor:pointer"><rect x="520" y="200" width="400" height="110" rx="55" fill="#ff6b5a" stroke="#fff" stroke-width="6"/>
     <text x="720" y="273" text-anchor="middle" font-size="48" font-weight="900" fill="#fff">▶ ¡Jugar!</text></g>
     <g id="alb" style="cursor:pointer"><rect x="570" y="340" width="300" height="70" rx="35" fill="#b388ff" stroke="#fff" stroke-width="5"/>
-    <text x="720" y="387" text-anchor="middle" font-size="30" font-weight="900" fill="#fff">📒 Mi álbum</text></g>`;
+    <text x="720" y="387" text-anchor="middle" font-size="30" font-weight="900" fill="#fff">📒 Mi álbum</text></g>
+    <g id="expb" style="cursor:pointer"><rect x="540" y="430" width="360" height="70" rx="35" fill="#4b5b78" stroke="#fff" stroke-width="5"/>
+    <text x="720" y="476" text-anchor="middle" font-size="24" font-weight="900" fill="#fff">🧠 Retos expertos (3º a 5º)</text></g>`;
   say('¡Hola! Dame órdenes con las flechas y llévame a las frutas. ¡Toca Jugar!');
   $('#play').addEventListener('pointerdown', e=>{ e.preventDefault(); unlocked=true; audio(); showLevel(maxLvl); });
   $('#alb').addEventListener('pointerdown', e=>{ e.preventDefault(); unlocked=true; audio(); showAlbum(); });
+  $('#expb').addEventListener('pointerdown', e=>{ e.preventDefault(); unlocked=true; audio(); showLevel(firstExpert()); });
   $('#big').addEventListener('pointerdown', ()=>{ audio(); sBeep(); });
 }
+function firstExpert(){ for (let i=BASIC;i<LEVELS.length;i++) if (isOpen(i) && !stars[i]) return i; return BASIC; }
 function showAlbum(){
   setMode('album'); setBG(WORLDS[1]); $('#title').textContent='📒 Mi álbum de figuritas';
   let h='';
-  STICKERS.forEach((s,i)=>{ const c=i%5, r=Math.floor(i/5), x=160+c*170, y=95+r*140, have=!!stars[i];
-    h+=`<g class="slot" data-i="${i}" style="cursor:${have?'pointer':'default'}"><rect x="${x}" y="${y}" width="140" height="120" rx="18" fill="${have?'#fff':'#e8d3b5'}" stroke="${have?'#ffd54a':'#c58b4a'}" stroke-width="5"/>
-      <text x="${x+70}" y="${y+75}" text-anchor="middle" font-size="${have?62:48}" ${have?'':'fill="#b08a5e" font-weight="900"'}>${have?s:'?'}</text>
-      <text x="${x+70}" y="${y+108}" text-anchor="middle" font-size="15" font-weight="800" fill="#6b3d14">Nivel ${i+1} ${have?'★'.repeat(stars[i]):''}</text></g>`; });
-  h+=`<g id="back" style="cursor:pointer"><rect x="400" y="500" width="200" height="50" rx="25" fill="#ff6b5a"/><text x="500" y="533" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">▶ Jugar</text></g>`;
+  STICKERS.forEach((s,i)=>{ const c=i%5, r=Math.floor(i/5), x=115+c*158, y=72+r*86, have=!!stars[i], ex=i>=BASIC;
+    h+=`<g class="slot" data-i="${i}" style="cursor:${have?'pointer':'default'}"><rect x="${x}" y="${y}" width="146" height="78" rx="14" fill="${have?'#fff':(ex?'#d8ccff':'#e8d3b5')}" stroke="${have?'#ffd54a':(ex?'#8b5cf6':'#c58b4a')}" stroke-width="4"/>
+      <text x="${x+73}" y="${y+46}" text-anchor="middle" font-size="${have?40:32}" ${have?'':`fill="${ex?'#8b5cf6':'#b08a5e'}" font-weight="900"`}>${have?s:'?'}</text>
+      <text x="${x+73}" y="${y+70}" text-anchor="middle" font-size="13" font-weight="800" fill="#6b3d14">Nivel ${i+1} ${have?'★'.repeat(stars[i]):''}</text></g>`; });
+  h+=`<g id="back" style="cursor:pointer"><rect x="400" y="508" width="200" height="44" rx="22" fill="#ff6b5a"/><text x="500" y="538" text-anchor="middle" font-size="21" font-weight="900" fill="#fff">▶ Jugar</text></g>`;
   G.innerHTML=h;
   const n=Object.keys(stars).length;
   say(n ? `¡Tienes ${n} figurita${n>1?'s':''} de ${STICKERS.length}! Gana niveles para completar tu álbum.` : 'Tu álbum está vacío. ¡Gana niveles para conseguir figuritas!');
   $('#back').addEventListener('pointerdown', e=>{ e.preventDefault(); showLevel(maxLvl); });
   G.querySelectorAll('.slot').forEach(s=>s.addEventListener('pointerdown',()=>{ const i=+s.dataset.i; if(stars[i]) showLevel(i); }));
 }
-function showFinal(){
-  setMode('final'); setBG(WORLDS[2]); $('#title').textContent='¡Programador de robots!';
-  const t=totalStars();
+function showFinal(expert=false){
+  setMode('final'); setBG(WORLDS[expert?3:2]); $('#title').textContent= expert ? '¡Experto en robots!' : '¡Programador de robots!';
+  const a=expert?BASIC:0, b=expert?LEVELS.length:BASIC, N=b-a; let t=0; for(let i=a;i<b;i++) t+=stars[i]||0;
   G.innerHTML = `<g id="med" style="cursor:pointer"><path d="M440,80 L500,190 L560,80" fill="#4fd1ff" stroke="#fff" stroke-width="4"/>
     <circle cx="500" cy="270" r="120" fill="#ffd54a" stroke="#c79100" stroke-width="10"/><circle cx="500" cy="270" r="92" fill="none" stroke="#fff3c4" stroke-width="5"/>
-    <text x="500" y="265" text-anchor="middle" font-size="70">🤖</text><text x="500" y="320" text-anchor="middle" font-size="22" font-weight="900" fill="#5a4500">PROGRAMADOR</text></g>
+    <text x="500" y="265" text-anchor="middle" font-size="70">🤖</text><text x="500" y="320" text-anchor="middle" font-size="22" font-weight="900" fill="#5a4500">${expert?'EXPERTO':'PROGRAMADOR'}</text></g>
     <g transform="translate(180 310) scale(.9)">${robotSVG()}</g>
     <text x="830" y="280" text-anchor="middle" font-size="56" font-weight="900" fill="#ffd54a">⭐ ${t}</text>
-    <text x="830" y="320" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">de ${LEVELS.length*3} estrellas</text>
+    <text x="830" y="320" text-anchor="middle" font-size="22" font-weight="800" fill="${expert?'#1d2a44':'#fff'}">de ${N*3} estrellas</text>
     <g id="alb" style="cursor:pointer"><rect x="300" y="430" width="190" height="56" rx="28" fill="#b388ff"/><text x="395" y="466" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">📒 Álbum</text></g>
-    <g id="again" style="cursor:pointer"><rect x="510" y="430" width="230" height="56" rx="28" fill="#ff6b5a"/><text x="625" y="466" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">⭐ Mejorar estrellas</text></g>`;
-  say(t>=LEVELS.length*3 ? '¡INCREÍBLE! ¡Tienes todas las estrellas! Muéstrale a tu profe.' : '¡Ganaste todos los niveles! Muéstrale tus estrellas a tu profe. ¿Puedes conseguir 3 estrellas en todos?');
+    <g id="again" style="cursor:pointer"><rect x="510" y="430" width="230" height="56" rx="28" fill="#ff6b5a"/><text x="625" y="466" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">⭐ Mejorar estrellas</text></g>
+    ${expert?'':`<g id="expf" style="cursor:pointer"><rect x="760" y="430" width="220" height="56" rx="28" fill="#4b5b78"/><text x="870" y="466" text-anchor="middle" font-size="21" font-weight="900" fill="#fff">🧠 Retos expertos</text></g>`}`;
+  say(expert ? (t>=N*3 ? '¡INCREÍBLE! ¡Eres un experto con todas las estrellas! Muéstrale a tu profe.' : '¡Superaste todos los retos expertos! ¿Puedes conseguir 3 estrellas en todos?') : (t>=N*3 ? '¡INCREÍBLE! ¡Tienes todas las estrellas! ¿Te atreves con los retos expertos?' : '¡Ganaste todos los niveles! Muéstrale tus estrellas a tu profe. ¿Puedes conseguir 3 estrellas en todos?'));
   confetti(alive(run)); sWin();
   $('#med').addEventListener('pointerdown',()=>{ sWin(); confetti(alive(run)); });
   $('#alb').addEventListener('pointerdown',e=>{ e.preventDefault(); showAlbum(); });
-  $('#again').addEventListener('pointerdown',e=>{ e.preventDefault(); const i=LEVELS.findIndex((_,k)=>(stars[k]||0)<3); showLevel(i<0?0:i); });
+  $('#again').addEventListener('pointerdown',e=>{ e.preventDefault(); let i=-1; for(let k=a;k<b;k++) if((stars[k]||0)<3){ i=k; break; } showLevel(i<0?a:i); });
+  const ef=$('#expf'); if(ef) ef.addEventListener('pointerdown',e=>{ e.preventDefault(); showLevel(firstExpert()); });
 }
 
 // ---------- botones ----------
 document.querySelectorAll('.arrow').forEach(b=>b.addEventListener('click',()=>{ unlocked=true; audio();
-  if (running||prog.length>=MAX) return; OV.innerHTML=''; FX.innerHTML=''; const d=b.dataset.d; prog.push(d); sAdd(d);
+  if (running||prog.length>=limitOf(LEVELS[lvl])) return; OV.innerHTML=''; FX.innerHTML=''; const d=b.dataset.d; prog.push({d,n:1}); sAdd(d);
   resetBoard(); renderProg(); }));
+$('#loop').onclick = ()=>{ unlocked=true; audio(); if (running||!prog.length) return; OV.innerHTML=''; const c=prog[prog.length-1]; c.n = c.n>=9 ? 1 : c.n+1; note(500+c.n*60,.1,'triangle',.1); resetBoard(); renderProg(); };
 $('#undo').onclick = ()=>{ prog.pop(); resetBoard(); renderProg(); };
 $('#clear').onclick = ()=>{ prog=[]; resetBoard(); renderProg(); };
 $('#run').onclick = ()=>{ unlocked=true; audio(); execute(); };
