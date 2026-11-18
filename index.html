@@ -41,6 +41,7 @@
   .plbl{flex:none;font-size:15px;font-weight:900;color:var(--lit);margin-right:4px;white-space:nowrap}
   .lvls span.exp{background:#3b2a6b;color:#d8ccff}.lvls span.exp.done{background:#8b5cf6;color:#fff}
   .lvls span.vol{background:#5a2018;color:#ffccbc}.lvls span.vol.done{background:#ff7043;color:#fff}
+  .lvls span.cas{background:#2d2350;color:#e3d9ff}.lvls span.cas.done{background:#a78bfa;color:#1a1033}
   .U{background:#3b82f6}.D{background:#a855f7}.L{background:#f59e0b}.R{background:#22c55e}
   .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
   .controls button{border:0;border-radius:16px;padding:11px 12px;font-size:18px;font-weight:900;cursor:pointer;color:#fff;transition:transform .08s}
@@ -156,6 +157,8 @@ function lava(x,y,k=1){ return `<g transform="translate(${x} ${y}) scale(${k})">
   <path d="M-20,8 L-6,-6 L4,6 L18,-12 M-4,18 L8,10" stroke="#ff7043" stroke-width="5" fill="none" stroke-linecap="round"/></g>`; }
 function crate(x,y,k=1){ return `<g transform="translate(${x} ${y}) scale(${k})"><rect x="-34" y="-34" width="68" height="68" rx="6" fill="#c98b4a" stroke="#7a4b1e" stroke-width="4"/>
   <path d="M-34,-34 L34,34 M34,-34 L-34,34" stroke="#7a4b1e" stroke-width="5"/><rect x="-34" y="-34" width="68" height="68" rx="6" fill="none" stroke="#7a4b1e" stroke-width="4"/></g>`; }
+function stone(x,y,k=1){ return `<g transform="translate(${x} ${y}) scale(${k})"><rect x="-36" y="-36" width="72" height="72" rx="6" fill="#4a4560" stroke="#211d33" stroke-width="4"/>
+  <path d="M-36,-12 H36 M-36,12 H36 M-8,-36 V-12 M16,-12 V12 M-14,12 V36" stroke="#211d33" stroke-width="3"/></g>`; }
 function bubble(x,y,t,w){ w=w||t.length*14+40; x=Math.max(w/2+8,Math.min(1000-w/2-8,x));
   return `<g><rect x="${x-w/2}" y="${y-32}" width="${w}" height="50" rx="18" fill="#fff" stroke="#17305e" stroke-width="3"/>
   <text x="${x}" y="${y+2}" text-anchor="middle" font-size="24" font-weight="800" fill="#17305e">${t}</text></g>`; }
@@ -180,7 +183,12 @@ const WORLDS = [
  { name:'Volcán', bg:'#2b0f0c', tiles:['#4a1f18','#5a2a20'], border:'#ff7043', title:'#ffd7c2', obs:'lava',
    deco:`<polygon points="0,560 90,330 130,330 220,560" fill="#3b1712"/><polygon points="90,330 130,330 118,300 102,300" fill="#ff7043"/>
          <polygon points="800,560 880,360 915,360 1000,520 1000,560" fill="#3b1712"/><polygon points="880,360 915,360 905,335 890,335" fill="#ff7043"/>`+
-         Array.from({length:18},(_,i)=>`<circle cx="${(i*131)%1000}" cy="${60+(i*47)%200}" r="${i%3?2:3}" fill="#ffab40" opacity=".7"/>`).join('') }
+         Array.from({length:18},(_,i)=>`<circle cx="${(i*131)%1000}" cy="${60+(i*47)%200}" r="${i%3?2:3}" fill="#ffab40" opacity=".7"/>`).join('') },
+ { name:'Castillo', bg:'#1a1033', tiles:['#5b5470','#6a6380'], border:'#c7b8ff', title:'#f3eaff', obs:'stone',
+   deco:Array.from({length:30},(_,i)=>`<circle cx="${(i*173)%1000}" cy="${(i*61)%200}" r="${i%3?1.5:2.5}" fill="#fff" opacity=".7"/>`).join('')+
+        `<circle cx="920" cy="70" r="36" fill="#fff6c9"/><circle cx="902" cy="60" r="34" fill="#1a1033"/>
+         <rect x="25" y="300" width="60" height="260" fill="#2d2350"/><polygon points="15,300 55,225 95,300" fill="#4b3a85"/>
+         <rect x="915" y="300" width="60" height="260" fill="#2d2350"/><polygon points="905,300 945,225 985,300" fill="#4b3a85"/>` }
 ];
 // ---------- niveles (de fácil a difícil) ----------
 // U=arriba D=abajo L=izquierda R=derecha · tablero 6 x 4 · [columna, fila]
@@ -231,13 +239,30 @@ const LEVELS = [
  { cols:10, rows:6, loops:true, limit:7, start:[0,0], fruits:[[9,0],[9,5]], obs:[[2,0],[2,1],[4,1],[5,1],[6,1],[2,2],[6,2],[8,2],[1,3],[2,3],[3,3],[4,3],[6,3],[8,3],[6,4],[8,4],[0,5],[1,5],[2,5],[3,5],[8,5]], sol:'D4R4D1R3U5R2D5',
    text:'El laberinto de lava. Máximo 7 tarjetas.' },
  { cols:10, rows:6, loops:true, limit:8, start:[0,0], fruits:[[9,0],[0,5]], obs:[[4,0],[0,1],[1,1],[2,1],[4,1],[6,1],[7,1],[4,2],[7,2],[1,3],[2,3],[3,3],[4,3],[6,3],[7,3],[9,3],[6,4],[1,5],[2,5],[3,5],[4,5],[8,5]], sol:'R3D2L3D3U1R5U4R4',
-   text:'¡EL DESAFÍO FINAL DEL VOLCÁN! Solo 8 tarjetas. ¿Eres un maestro programador?' }
+   text:'¡EL DESAFÍO FINAL DEL VOLCÁN! Solo 8 tarjetas. ¿Eres un maestro programador?' },
+ // ===== CASTILLO: frutas con número, hay que comerlas EN ORDEN (tablero 10 x 6) =====
+ { cols:10, rows:6, loops:true, order:true, limit:2, start:[0,0], fruits:[[9,0],[4,0]], obs:[], sol:'R9L5',
+   text:'NUEVO: 🔢 frutas con número. ¡Cómelas en orden: primero la 1 y luego la 2! Máximo 2 tarjetas.' },
+ { cols:10, rows:6, loops:true, order:true, limit:4, start:[0,5], fruits:[[0,0],[9,5],[9,0]], obs:[[4,2],[5,3]], sol:'U5R9D5U5',
+   text:'Tres frutas en orden. ¡Ojo! Vas a pasar por una antes de tiempo. Máximo 4 tarjetas.' },
+ { cols:10, rows:6, loops:true, order:true, limit:4, start:[4,2], fruits:[[0,2],[9,2],[4,0]], obs:[[3,1],[4,1],[5,1]], sol:'L4R9U2L5',
+   text:'¡Ida y vuelta! Primero a un lado, luego al otro y al final arriba. Máximo 4 tarjetas.' },
+ { cols:10, rows:6, loops:true, order:true, limit:6, start:[0,0], fruits:[[9,5],[0,5]], obs:[[5,0],[5,1],[5,3],[5,4],[5,5],[2,4],[7,4],[7,0]], sol:'D2R9D3U3L9D3',
+   text:'Dos cuartos y una sola puerta en la muralla. Máximo 6 tarjetas.' },
+ { cols:10, rows:6, loops:true, order:true, limit:5, start:[0,5], fruits:[[9,5],[9,0],[0,0],[5,5]], obs:[[3,2],[4,2],[5,2],[6,2],[3,3],[6,3]], sol:'R9U5L9D5R5',
+   text:'Cuatro frutas en orden por todo el borde. Máximo 5 tarjetas.' },
+ { cols:10, rows:6, loops:true, order:true, limit:6, start:[0,0], fruits:[[9,3],[0,3],[5,0],[5,5]], obs:[[2,1],[7,1],[2,4],[7,4],[3,2],[6,2]], sol:'D3R9L9U3R5D5',
+   text:'Cuatro frutas en cruz. ¡Sigue los números! Máximo 6 tarjetas.' },
+ { cols:10, rows:6, loops:true, order:true, limit:7, start:[0,0], fruits:[[9,4],[0,2]], obs:[[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3]], sol:'R9D2L9D2R9L9U2',
+   text:'La serpiente del castillo: la fruta 1 está al final… ¡y después hay que volver! Máximo 7 tarjetas.' },
+ { cols:10, rows:6, loops:true, order:true, limit:9, start:[0,5], fruits:[[9,0],[0,0],[9,5]], obs:[[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4]], sol:'U3R9U2L9R9D3L8D2R8',
+   text:'¡EL REY DEL CASTILLO! Tres frutas en orden y dos murallas. Solo 9 tarjetas.' }
 ];
-const BASIC = 15, EXPERT_END = 25;
-const worldOf = i => i>=EXPERT_END ? WORLDS[4] : i>=BASIC ? WORLDS[3] : WORLDS[Math.floor(i/5)];
-const stageOf = i => i<BASIC ? 0 : i<EXPERT_END ? 1 : 2;
+const BASIC = 15, EXPERT_END = 25, VOLCAN_END = 30;
+const worldOf = i => i>=VOLCAN_END ? WORLDS[5] : i>=EXPERT_END ? WORLDS[4] : i>=BASIC ? WORLDS[3] : WORLDS[Math.floor(i/5)];
+const stageOf = i => i<BASIC ? 0 : i<EXPERT_END ? 1 : i<VOLCAN_END ? 2 : 3;
 const FRUITS = ['🍎','🍓','🍌','🍇','🍐','🍊','🍉','🍒','🍍','🥝','🍑','🍋'];
-const STICKERS = ['🐞','🦋','🐝','🐌','🐢','🐸','🦊','🐼','🐨','🦁','🐬','🦄','🐙','🚀','🏆','🦖','🐳','🦉','🐧','🦀','🐲','🛸','🌋','🤖','👑','🔥','🐉','🦕','💎','🌟'];
+const STICKERS = ['🐞','🦋','🐝','🐌','🐢','🐸','🦊','🐼','🐨','🦁','🐬','🦄','🐙','🚀','🏆','🦖','🐳','🦉','🐧','🦀','🐲','🛸','🌋','🤖','👑','🔥','🐉','🦕','💎','🌟','🏰','🗝️','🦇','👻','🧙','🛡️','⚔️','🌙'];
 const DIR = {U:[0,-1,'↑','arriba'], D:[0,1,'↓','abajo'], L:[-1,0,'←','izquierda'], R:[1,0,'→','derecha']};
 let CELL=100, BX=200, BY=110, COLS=6, ROWS=4, RS=.5; const MAX=14;
 function setGeom(L){ COLS=L.cols||6; ROWS=L.rows||4; CELL=Math.min(100,Math.floor(640/COLS),Math.floor(420/ROWS));
@@ -255,7 +280,7 @@ function save(){ store.set('stars',stars); store.set('max',maxLvl); $('#starsTxt
 
 function setBG(w){ $('#bg').innerHTML = `<rect width="1000" height="560" fill="${w.bg}"/>${w.deco}`; $('#title').setAttribute('fill', w.title); }
 function lvlDots(){
-  $('#lvls').innerHTML = LEVELS.map((_,i)=>{ const lock=!isOpen(i), s=stars[i]||0, ex=i>=EXPERT_END?' vol':i>=BASIC?' exp':'';
+  $('#lvls').innerHTML = LEVELS.map((_,i)=>{ const lock=!isOpen(i), s=stars[i]||0, ex=i>=VOLCAN_END?' cas':i>=EXPERT_END?' vol':i>=BASIC?' exp':'';
     return `<span data-i="${i}" class="${lock?'lock'+ex:(mode==='level'&&i===lvl?'on':(s?'done'+ex:ex.trim()))}">${lock?'🔒':i+1}${s?`<small>${'★'.repeat(s)}</small>`:''}</span>`; }).join('');
   $('#lvls').querySelectorAll('span').forEach(s=>s.onclick=()=>{ if(!isOpen(+s.dataset.i)) return; unlocked=true; audio(); showLevel(+s.dataset.i); });
 }
@@ -269,8 +294,8 @@ function boardSVG(L, w){
   h+=`<rect x="${BX}" y="${BY}" width="${COLS*CELL}" height="${ROWS*CELL}" rx="14" fill="none" stroke="${w.border}" stroke-width="5"/>`;
   h+=`<rect x="${BX+L.start[0]*CELL+6}" y="${BY+L.start[1]*CELL+6}" width="${CELL-12}" height="${CELL-12}" rx="10" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 6"/>`;
   h+=`<g id="trail"></g><g id="ghost"></g>`;
-  const k=CELL/100; L.obs.forEach(([c,r])=> h+= w.obs==='meteor' ? meteor(cx(c),cy(r),k) : w.obs==='crate' ? crate(cx(c),cy(r),k) : w.obs==='lava' ? lava(cx(c),cy(r),k) : swatter(cx(c),cy(r)-4*k,k));
-  L.fruits.forEach(([c,r],i)=> h+=`<g class="fruit" data-k="${c},${r}" transform="translate(${cx(c)} ${cy(r)})"><text y="${20*CELL/100}" text-anchor="middle" font-size="${56*CELL/100}">${FRUITS[(LEVELS.indexOf(L)+i)%FRUITS.length]}</text></g>`);
+  const k=CELL/100; L.obs.forEach(([c,r])=> h+= w.obs==='meteor' ? meteor(cx(c),cy(r),k) : w.obs==='crate' ? crate(cx(c),cy(r),k) : w.obs==='lava' ? lava(cx(c),cy(r),k) : w.obs==='stone' ? stone(cx(c),cy(r),k) : swatter(cx(c),cy(r)-4*k,k));
+  L.fruits.forEach(([c,r],i)=> h+=`<g class="fruit" data-k="${c},${r}" data-i="${i}" transform="translate(${cx(c)} ${cy(r)})"><text y="${20*CELL/100}" text-anchor="middle" font-size="${56*CELL/100}">${FRUITS[(LEVELS.indexOf(L)+i)%FRUITS.length]}</text>${L.order?`<circle cx="${30*k}" cy="${-28*k}" r="${16*k}" fill="#ffd54a" stroke="#17305e" stroke-width="3"/><text x="${30*k}" y="${-20*k}" text-anchor="middle" font-size="${22*k}" font-weight="900" fill="#17305e">${i+1}</text>`:''}</g>`);
   h+=`<g id="rb">${robotSVG()}</g><g id="dizzy"></g><g id="bub"></g>`;
   h+=`<g transform="translate(900 300)"><circle r="56" fill="#fff" opacity=".85"/><text id="cnt" y="14" text-anchor="middle" font-size="38" font-weight="900" fill="#17305e"></text></g>`;
   h+=`<g transform="translate(100 300)"><circle r="56" fill="#fff" opacity=".85"/><text y="-8" text-anchor="middle" font-size="16" font-weight="800" fill="#17305e">Intentos</text><text id="tries" y="28" text-anchor="middle" font-size="36" font-weight="900" fill="#17305e">0</text></g>`;
@@ -339,7 +364,9 @@ async function execute(){
     await tween(T,t=>{ const e=ease(t); placeRobot(p0[0]+dx*e,p0[1]+dy*e,0,-Math.sin(Math.PI*t)*18*CELL/100); },ok);
     pos=[nc,nr];
     const f=[...G.querySelectorAll('.fruit')].find(f=>f.dataset.k===`${nc},${nr}`);
-    if (f && !got.has(f.dataset.k)){ got.add(f.dataset.k); sEat(); updCount();
+    if (f && !got.has(f.dataset.k) && L.order && +f.dataset.i !== got.size)
+      $('#bub').innerHTML = bubble(cx(nc), Math.max(40,cy(nr)-90), `¡Todavía no! Va la ${got.size+1}`, 300);
+    else if (f && !got.has(f.dataset.k)){ got.add(f.dataset.k); sEat(); updCount();
       tween(300,t=>{ f.setAttribute('transform',`translate(${cx(nc)} ${cy(nr)}) scale(${1+.5*Math.sin(Math.PI*t)-t})`); },ok).then(()=>{ f.style.opacity=0; });
       await tween(260,t=>placeRobot(nc,nr,0,0,0,RS*(1+.24*Math.sin(Math.PI*t))),ok);
       $('#bub').innerHTML = bubble(cx(nc), Math.max(40,cy(nr)-90), '¡Ñam! 😋', 150);
@@ -360,7 +387,7 @@ async function win(ok){
   await tween(900,t=>placeRobot(pos[0],pos[1],0,-Math.abs(Math.sin(t*Math.PI*3))*30,Math.sin(t*Math.PI*6)*15),ok);
   if(!ok()) return;
   say(n===3 ? '¡Perfecto! ¡A la primera! ¡Eres un gran programador!' : '¡Lo lograste! ¿Puedes hacerlo a la primera para ganar 3 estrellas?');
-  const sticker = STICKERS[lvl], last = lvl===BASIC-1 || lvl===EXPERT_END-1 || lvl===LEVELS.length-1;
+  const sticker = STICKERS[lvl], last = lvl===BASIC-1 || lvl===EXPERT_END-1 || lvl===VOLCAN_END-1 || lvl===LEVELS.length-1;
   OV.innerHTML = `<rect width="1000" height="560" fill="#000" opacity=".35"/>
     <rect x="230" y="70" width="540" height="420" rx="30" fill="#fff" stroke="#ffd54a" stroke-width="8"/>
     <text x="500" y="135" text-anchor="middle" font-size="44" font-weight="900" fill="#17305e">¡Ganaste!</text>
@@ -404,10 +431,11 @@ function firstExpert(){ for (let i=BASIC;i<LEVELS.length;i++) if (isOpen(i) && !
 function showAlbum(){
   setMode('album'); setBG(WORLDS[1]); $('#title').textContent='📒 Mi álbum de figuritas';
   let h='';
-  STICKERS.forEach((s,i)=>{ const c=i%6, r=Math.floor(i/6), x=82+c*142, y=70+r*86, have=!!stars[i], ex=i>=BASIC;
-    h+=`<g class="slot" data-i="${i}" style="cursor:${have?'pointer':'default'}"><rect x="${x}" y="${y}" width="130" height="78" rx="14" fill="${have?'#fff':(i>=EXPERT_END?'#ffccbc':ex?'#d8ccff':'#e8d3b5')}" stroke="${have?'#ffd54a':(i>=EXPERT_END?'#ff7043':ex?'#8b5cf6':'#c58b4a')}" stroke-width="4"/>
-      <text x="${x+65}" y="${y+46}" text-anchor="middle" font-size="${have?40:32}" ${have?'':`fill="${ex?'#8b5cf6':'#b08a5e'}" font-weight="900"`}>${have?s:'?'}</text>
-      <text x="${x+65}" y="${y+70}" text-anchor="middle" font-size="13" font-weight="800" fill="#6b3d14">Nivel ${i+1} ${have?'★'.repeat(stars[i]):''}</text></g>`; });
+  STICKERS.forEach((s,i)=>{ const c=i%8, r=Math.floor(i/8), x=26+c*120, y=66+r*86, have=!!stars[i], ex=i>=BASIC;
+    const fill=i>=VOLCAN_END?'#e3d9ff':i>=EXPERT_END?'#ffccbc':ex?'#d8ccff':'#e8d3b5', line=i>=VOLCAN_END?'#7c5cff':i>=EXPERT_END?'#ff7043':ex?'#8b5cf6':'#c58b4a';
+    h+=`<g class="slot" data-i="${i}" style="cursor:${have?'pointer':'default'}"><rect x="${x}" y="${y}" width="110" height="78" rx="14" fill="${have?'#fff':fill}" stroke="${have?'#ffd54a':line}" stroke-width="4"/>
+      <text x="${x+55}" y="${y+46}" text-anchor="middle" font-size="${have?40:32}" ${have?'':`fill="${ex?'#8b5cf6':'#b08a5e'}" font-weight="900"`}>${have?s:'?'}</text>
+      <text x="${x+55}" y="${y+70}" text-anchor="middle" font-size="13" font-weight="800" fill="#6b3d14">Nivel ${i+1} ${have?'★'.repeat(stars[i]):''}</text></g>`; });
   h+=`<g id="back" style="cursor:pointer"><rect x="400" y="508" width="200" height="44" rx="22" fill="#ff6b5a"/><text x="500" y="538" text-anchor="middle" font-size="21" font-weight="900" fill="#fff">▶ Jugar</text></g>`;
   G.innerHTML=h;
   const n=Object.keys(stars).length;
@@ -416,24 +444,24 @@ function showAlbum(){
   G.querySelectorAll('.slot').forEach(s=>s.addEventListener('pointerdown',()=>{ const i=+s.dataset.i; if(stars[i]) showLevel(i); }));
 }
 function showFinal(stage=0){
-  const expert = stage>0, master = stage===2;
-  setMode('final'); setBG(WORLDS[[2,3,4][stage]]); $('#title').textContent= master ? '¡Maestro del Volcán!' : expert ? '¡Experto en robots!' : '¡Programador de robots!';
-  const a=[0,BASIC,EXPERT_END][stage], b=[BASIC,EXPERT_END,LEVELS.length][stage], N=b-a; let t=0; for(let i=a;i<b;i++) t+=stars[i]||0;
+  const expert = stage>0, master = stage===2, king = stage===3;
+  setMode('final'); setBG(WORLDS[[2,3,4,5][stage]]); $('#title').textContent= king ? '¡Rey del Castillo!' : master ? '¡Maestro del Volcán!' : expert ? '¡Experto en robots!' : '¡Programador de robots!';
+  const a=[0,BASIC,EXPERT_END,VOLCAN_END][stage], b=[BASIC,EXPERT_END,VOLCAN_END,LEVELS.length][stage], N=b-a; let t=0; for(let i=a;i<b;i++) t+=stars[i]||0;
   G.innerHTML = `<g id="med" style="cursor:pointer"><path d="M440,80 L500,190 L560,80" fill="#4fd1ff" stroke="#fff" stroke-width="4"/>
     <circle cx="500" cy="270" r="120" fill="#ffd54a" stroke="#c79100" stroke-width="10"/><circle cx="500" cy="270" r="92" fill="none" stroke="#fff3c4" stroke-width="5"/>
-    <text x="500" y="265" text-anchor="middle" font-size="70">🤖</text><text x="500" y="320" text-anchor="middle" font-size="22" font-weight="900" fill="#5a4500">${master?'MAESTRO':expert?'EXPERTO':'PROGRAMADOR'}</text></g>
+    <text x="500" y="265" text-anchor="middle" font-size="70">🤖</text><text x="500" y="320" text-anchor="middle" font-size="22" font-weight="900" fill="#5a4500">${king?'REY':master?'MAESTRO':expert?'EXPERTO':'PROGRAMADOR'}</text></g>
     <g transform="translate(180 310) scale(.9)">${robotSVG()}</g>
     <text x="830" y="280" text-anchor="middle" font-size="56" font-weight="900" fill="#ffd54a">⭐ ${t}</text>
-    <text x="830" y="320" text-anchor="middle" font-size="22" font-weight="800" fill="${master?'#ffd7c2':expert?'#1d2a44':'#fff'}">de ${N*3} estrellas</text>
+    <text x="830" y="320" text-anchor="middle" font-size="22" font-weight="800" fill="${king?'#f3eaff':master?'#ffd7c2':expert?'#1d2a44':'#fff'}">de ${N*3} estrellas</text>
     <g id="alb" style="cursor:pointer"><rect x="300" y="430" width="190" height="56" rx="28" fill="#b388ff"/><text x="395" y="466" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">📒 Álbum</text></g>
     <g id="again" style="cursor:pointer"><rect x="510" y="430" width="230" height="56" rx="28" fill="#ff6b5a"/><text x="625" y="466" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">⭐ Mejorar estrellas</text></g>
-    ${master?'':`<g id="expf" style="cursor:pointer"><rect x="760" y="430" width="220" height="56" rx="28" fill="${expert?'#d84315':'#4b5b78'}"/><text x="870" y="466" text-anchor="middle" font-size="21" font-weight="900" fill="#fff">${expert?'🌋 ¡Al Volcán!':'🧠 Retos expertos'}</text></g>`}`;
-  say(master ? (t>=N*3 ? '¡INCREÍBLE! ¡Conquistaste el Volcán con todas las estrellas! Eres un maestro programador.' : '¡Conquistaste el Volcán! Eres un maestro programador. ¿Puedes sacar 3 estrellas en todos?') : expert ? (t>=N*3 ? '¡INCREÍBLE! ¡Eres un experto con todas las estrellas! ¿Te atreves con el Volcán?' : '¡Superaste los retos expertos! Ahora te espera el Volcán 🌋.') : (t>=N*3 ? '¡INCREÍBLE! ¡Tienes todas las estrellas! ¿Te atreves con los retos expertos?' : '¡Ganaste todos los niveles! Muéstrale tus estrellas a tu profe. ¿Puedes conseguir 3 estrellas en todos?'));
+    ${king?'':`<g id="expf" style="cursor:pointer"><rect x="760" y="430" width="220" height="56" rx="28" fill="${['#4b5b78','#d84315','#6d4bd1'][stage]}"/><text x="870" y="466" text-anchor="middle" font-size="21" font-weight="900" fill="#fff">${['🧠 Retos expertos','🌋 ¡Al Volcán!','🏰 ¡Al Castillo!'][stage]}</text></g>`}`;
+  say(king ? (t>=N*3 ? '¡INCREÍBLE! ¡Eres el Rey del Castillo con todas las estrellas! Nadie programa como tú.' : '¡Conquistaste el Castillo! Eres el Rey de los programadores. ¿Puedes sacar 3 estrellas en todos?') : master ? (t>=N*3 ? '¡INCREÍBLE! ¡Conquistaste el Volcán con todas las estrellas! ¿Te atreves con el Castillo 🏰?' : '¡Conquistaste el Volcán! Ahora te espera el Castillo 🏰.') : expert ? (t>=N*3 ? '¡INCREÍBLE! ¡Eres un experto con todas las estrellas! ¿Te atreves con el Volcán?' : '¡Superaste los retos expertos! Ahora te espera el Volcán 🌋.') : (t>=N*3 ? '¡INCREÍBLE! ¡Tienes todas las estrellas! ¿Te atreves con los retos expertos?' : '¡Ganaste todos los niveles! Muéstrale tus estrellas a tu profe. ¿Puedes conseguir 3 estrellas en todos?'));
   confetti(alive(run)); sWin();
   $('#med').addEventListener('pointerdown',()=>{ sWin(); confetti(alive(run)); });
   $('#alb').addEventListener('pointerdown',e=>{ e.preventDefault(); showAlbum(); });
   $('#again').addEventListener('pointerdown',e=>{ e.preventDefault(); let i=-1; for(let k=a;k<b;k++) if((stars[k]||0)<3){ i=k; break; } showLevel(i<0?a:i); });
-  const ef=$('#expf'); if(ef) ef.addEventListener('pointerdown',e=>{ e.preventDefault(); stage===1 ? showLevel(EXPERT_END) : showLevel(firstExpert()); });
+  const ef=$('#expf'); if(ef) ef.addEventListener('pointerdown',e=>{ e.preventDefault(); stage===2 ? showLevel(VOLCAN_END) : stage===1 ? showLevel(EXPERT_END) : showLevel(firstExpert()); });
 }
 
 // ---------- botones ----------
